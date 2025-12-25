@@ -18,6 +18,8 @@ struct mat4x4{ float m[4][4] = { 0 }; };
 mesh meshCube;
 mat4x4 matProj;
 
+vec3d vCamera = { 0.0f, 0.0f, 0.0f };
+
 int windowWidth, windowHeight;
 float fTheta;
 float fNear = 0.1f;
@@ -96,30 +98,32 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]){
     CalculateScreenProjection();
     
     meshCube.tris = {
-        // South
-        { 0.0f, 0.0f, 0.0f,     0.0f, 1.0f, 0.0f,   1.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f,     1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f },
+    // SOUTH (z = 0)
+    { { {0,0,0}, {1,1,0}, {1,0,0} } },
+    { { {0,0,0}, {0,1,0}, {1,1,0} } },
 
-        // East
-        { 1.0f, 0.0f, 0.0f,     1.0f, 1.0f, 0.0f,   1.0f, 1.0f, 1.0f },
-        { 1.0f, 0.0f, 1.0f,     1.0f, 1.0f, 1.0f,   1.0f, 0.0f, 0.0f },
+    // EAST (x = 1)
+    { { {1,0,0}, {1,1,1}, {1,0,1} } },
+    { { {1,0,0}, {1,1,0}, {1,1,1} } },
 
-        // North
-        { 1.0f, 0.0f, 1.0f,     1.0f, 1.0f, 1.0f,   0.0f, 1.0f, 1.0f },
-        { 1.0f, 0.0f, 1.0f,     0.0f, 1.0f, 1.0f,   0.0f, 0.0f, 1.0f },
+    // NORTH (z = 1)
+    { { {1,0,1}, {0,1,1}, {0,0,1} } },
+    { { {1,0,1}, {1,1,1}, {0,1,1} } },
 
-        // West 
-        { 0.0f, 0.0f, 1.0f,     0.0f, 1.0f, 1.0f,   0.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f,     0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f },
+    // WEST (x = 0)
+    { { {0,0,1}, {0,1,0}, {0,0,0} } },
+    { { {0,0,1}, {0,1,1}, {0,1,0} } },
 
-        // Top
-        { 0.0f, 1.0f, 0.0f,     0.0f, 1.0f, 1.0f,   1.0f, 1.0f, 1.0f },
-        { 0.0f, 1.0f, 0.0f,     1.0f, 1.0f, 1.0f,   1.0f, 1.0f, 0.0f },
+    // TOP (y = 1)
+    { { {0,1,0}, {0,1,1}, {1,1,1} } },
+    { { {0,1,0}, {1,1,1}, {1,1,0} } },
 
-        // Bottom
-        { 1.0f, 0.0f, 1.0f,     0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 0.0f },
-        { 1.0f, 0.0f, 1.0f,     0.0f, 0.0f, 0.0f,   1.0f, 0.0f, 0.0f },
-    };
+    // BOTTOM (y = 0)
+    { { {1,0,1}, {0,0,0}, {1,0,0} } },
+    { { {1,0,1}, {0,0,1}, {0,0,0} } },
+};
+
+
     return SDL_APP_CONTINUE;
 }
 
@@ -215,7 +219,11 @@ SDL_AppResult SDL_AppIterate(void *appstate){
         normal.y /= l;
         normal.z /= l;
 
-        if(normal.z < 0) {
+        //if(normal.z < 0) {
+        if(normal.x * (triTranslated.p[0].x - vCamera.x) +
+           normal.y * (triTranslated.p[0].y - vCamera.y) +
+           normal.z * (triTranslated.p[0].z - vCamera.z) < 0.0f) {
+
             // Project Tringles (3D -> 2D)
             MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
             MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
