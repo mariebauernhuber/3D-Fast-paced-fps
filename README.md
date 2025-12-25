@@ -1,2 +1,2 @@
-# 3D-Graphics-Engine
-A basic 3D software graphics engine. Very WIP.
+This is very incomplete, and also my first 3D rendering project.
+Approach the source code with caution lol
