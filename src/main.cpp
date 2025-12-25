@@ -627,7 +627,7 @@ SDL_AppResult SDL_AppIterate(void *appstate){
 
     // Set up rotation matrices (stolen from thelonecoder, temporary)
     mat4x4 matRotZ, matRotX, matRotY;
-    fTheta += 1.0f * deltaTime;
+    fTheta += 0.0f * deltaTime;
 
     matRotZ = Matrix_MakeRotationZ(fTheta);
     matRotX = Matrix_MakeRotationX(fTheta);
@@ -760,11 +760,31 @@ SDL_AppResult SDL_AppIterate(void *appstate){
         };
 
         for (auto &t : listTriangles) {
-            drawFilledTriangle(renderer,
-            { t.p[0].x, t.p[0].y },
-            { t.p[1].x, t.p[1].y },
-            { t.p[2].x, t.p[2].y }
-            );
+            if(debugModeTogggled){
+                SDL_RenderLine(
+                renderer,
+                t.p[0].x, t.p[0].y,
+                t.p[1].x, t.p[1].y
+                );
+
+                SDL_RenderLine(
+                renderer,
+                t.p[1].x, t.p[1].y,
+                t.p[2].x, t.p[2].y
+                );
+
+                SDL_RenderLine(
+                renderer,
+                t.p[2].x, t.p[2].y,
+                t.p[0].x, t.p[0].y
+                );
+            }else{
+                drawFilledTriangle(renderer,
+                { t.p[0].x, t.p[0].y },
+                { t.p[1].x, t.p[1].y },
+                { t.p[2].x, t.p[2].y }
+                );
+            };
         }
         if(fullDebugMode){std::cout << "Finished drawing once\n\n";}
         nDrawCycles++;
