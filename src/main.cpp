@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include <fstream>
+#include <strstream>
 
 static SDL_Window* window;
 static SDL_Renderer* renderer;
@@ -12,7 +14,39 @@ static SDL_Renderer* renderer;
 struct vec3d{ float x,y,z; };
 struct vec2d{ float x,y; };
 struct triangle{ vec3d p[3]; };
-struct mesh{ std::vector<triangle> tris; };
+struct mesh{ 
+    std::vector<triangle> tris; 
+
+    bool LoadFromObjectFile(std::string sFilename){
+        std::ifstream f(sFilename);
+        if(!f.is_open()){ return false; }
+
+        // Local cache or verts
+        std::vector<vec3d> verts;
+
+        while(!f.eof()){
+            char line[128];
+            f.getline(line, 128);
+
+            std::strstream s;
+            s << line;
+
+            char junk;
+
+            if(line[0]=='v'){
+                vec3d v;
+                s >> junk >> v.x >> v.y >> v.z;
+                verts.push_back(v);
+            };
+            if (line[0]=='f'){
+                int f[3];
+                s >> junk >> f[0] >> f[1] >> f[2];
+                tris.push_back({verts[f[0] - 1], verts[f[1] - 1], verts[f[2] - 1] });
+            };
+        }
+        return true;
+    }
+};
 struct mat4x4{ float m[4][4] = { 0 }; };
 
 mesh meshCube;
@@ -87,6 +121,7 @@ void PrintDebugInfo(){
     }
 }
 
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]){
     if(!SDL_Init(SDL_INIT_VIDEO)){
         return SDL_APP_FAILURE;
@@ -96,33 +131,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]){
 
     CalculateScreenTransforms();
     CalculateScreenProjection();
-    
-    meshCube.tris = {
-    // SOUTH (z = 0)
-    { { {0,0,0}, {1,1,0}, {1,0,0} } },
-    { { {0,0,0}, {0,1,0}, {1,1,0} } },
-
-    // EAST (x = 1)
-    { { {1,0,0}, {1,1,1}, {1,0,1} } },
-    { { {1,0,0}, {1,1,0}, {1,1,1} } },
-
-    // NORTH (z = 1)
-    { { {1,0,1}, {0,1,1}, {0,0,1} } },
-    { { {1,0,1}, {1,1,1}, {0,1,1} } },
-
-    // WEST (x = 0)
-    { { {0,0,1}, {0,1,0}, {0,0,0} } },
-    { { {0,0,1}, {0,1,1}, {0,1,0} } },
-
-    // TOP (y = 1)
-    { { {0,1,0}, {0,1,1}, {1,1,1} } },
-    { { {0,1,0}, {1,1,1}, {1,1,0} } },
-
-    // BOTTOM (y = 0)
-    { { {1,0,1}, {0,0,0}, {1,0,0} } },
-    { { {1,0,1}, {0,0,1}, {0,0,0} } },
-};
-
+   
+    meshCube.LoadFromObjectFile("src/VideoShip.obj");
 
     return SDL_APP_CONTINUE;
 }
@@ -147,7 +157,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event){
         };
         if(event->key.scancode == SDL_SCANCODE_F8) {
             debugModeTogggled = !debugModeTogggled;
-        }
+        };
     }
 
     return SDL_APP_CONTINUE;
@@ -161,10 +171,9 @@ SDL_AppResult SDL_AppIterate(void *appstate){
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-
     // Set up rotation matrices (stolen from thelonecoder, temporary)
     mat4x4 matRotZ, matRotX;
-    fTheta += 2.0f * deltaTime;
+    fTheta += 1.0f * deltaTime;
 
     // Rotation Z
     matRotZ.m[0][0] = cosf(fTheta);
@@ -197,9 +206,9 @@ SDL_AppResult SDL_AppIterate(void *appstate){
         
         //Offset onto the screen
         triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+        triTranslated.p[0].z = triRotatedZX.p[0].z + 8.0f;
+        triTranslated.p[1].z = triRotatedZX.p[1].z + 8.0f;
+        triTranslated.p[2].z = triRotatedZX.p[2].z + 8.0f;
         
         vec3d normal, line1, line2;
         line1.x = triTranslated.p[1].x - triTranslated.p[0].x;
@@ -261,7 +270,6 @@ SDL_AppResult SDL_AppIterate(void *appstate){
 
     };
 
-
     SDL_RenderPresent(renderer);
 
     SDL_Delay((1.0f/targetFrameRate)*1000.0f);
@@ -269,7 +277,7 @@ SDL_AppResult SDL_AppIterate(void *appstate){
 
     if(debugModeTogggled){
         PrintDebugInfo();
-    }
+    };
 
     return SDL_APP_CONTINUE;
 }
