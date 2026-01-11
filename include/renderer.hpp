@@ -21,8 +21,5 @@ void execOncePerSec();
 void MinuteTimer();
 void PrintDebugInfo();
 vec2d ProjectToScreen(const vec3d &v);
-bool IsTriangleInView(const triangle &tri);
-void UpdateFrustumPlanes();
-std::vector<triangle> ClipTriangleToFrustumOptimized(const triangle &tri);
 void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj);
 
