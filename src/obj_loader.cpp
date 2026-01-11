@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 
+unsigned long long nTrisPushedBack;
 
 bool mesh::LoadFromObjectFile(const std::string& filename) {
     std::ifstream f(filename);
@@ -34,6 +35,7 @@ bool mesh::LoadFromObjectFile(const std::string& filename) {
                 verts[i2 - 1]
             };
             tris.push_back(tri);
+	    nTrisPushedBack++;
         }
     }
     return true;

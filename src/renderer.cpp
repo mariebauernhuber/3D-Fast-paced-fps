@@ -1,12 +1,15 @@
 #include "../include/renderer.hpp"
+#include <SDL3/SDL_video.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include "../include/mesh.hpp"
+#include <SDL3/SDL.h>
 
 bool debugModeTogggled = false;
-
+extern unsigned long long nObjRenderCycles;
+extern unsigned long long nTrisPushedBack;
 unsigned long long nDrawCycles = 0;
 
 int windowWidth, windowHeight;
@@ -85,7 +88,7 @@ void drawFilledTriangle(SDL_Renderer* renderer, vec2d p0, vec2d p1, vec2d p2) {
     }
 }
 
-void CalculateScreenTransforms(){
+void CalculateScreenTransforms(SDL_Window* window){
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
     fAspectRatio = (float)windowHeight / (float)windowWidth;
     fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159265358979323f);
@@ -93,6 +96,12 @@ void CalculateScreenTransforms(){
 
 void CalculateScreenProjection(){
     matProj = Matrix_MakeProjection(90.0f, fAspectRatio, fNear, fFar);
+    std::cout << "matProj made!\n";
+    std::cout << "fAspectRatio: " << fAspectRatio;
+    std::cout << "\nfNear: " << fNear;
+    std::cout << "\nfFar: " << fFar;
+    std::cout << "\nwindowHeight: " << (float)windowHeight;
+    std::cout << "\nwindowWidth: " << (float)windowWidth;
 }
 
 
@@ -143,7 +152,10 @@ void PrintDebugInfo(){
     std::cout << "hoursElapsedSinceStartup: " << hoursElapsedSinceStartup << "\n";
     std::cout << "daysElapsedSinceStartup: " << daysElapsedSinceStartup << "\n\n";
 
-    std::cout << "Draw Cycles completed: " << nDrawCycles << "\n\n";
+    std::cout << "Draw Cycles completed: " << nDrawCycles << "\n";
+    std::cout << "OBJ render cycles completed: " << nObjRenderCycles <<"\n";
+    std::cout << "TrisPushBacks: " << nTrisPushedBack << "\n\n";
+    std::cout << "fAspectRatio: " << fAspectRatio << "\n";
 
     std::cout << "Camera Position:\n X: " << vCamera.x << "\n" << " Y: " << vCamera.y << "\n";
     std::cout << "\033[2J\033[1;1H"; //ANSI CODES to clear console screen
@@ -250,6 +262,7 @@ void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, 
 
         // 4. Clip triangle against frustum planes
         auto clippedTris = ClipTriangleToFrustumOptimized(triViewed);
+	
 
         // 5. Project and add to raster list
         for(auto &triProj : clippedTris) {
@@ -264,17 +277,17 @@ void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, 
                 triProjected.p[i].y /= triProjected.p[i].w;
                 triProjected.p[i].z /= triProjected.p[i].w;
             }
-
+		
             vecTrianglesToRaster.push_back(triProjected);
         }
     }
-
+	
     // 6. Depth sort
     std::sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](const triangle &t1, const triangle &t2){
         float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
         float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
         return z1 > z2;
-    });
+    }); 
 
     // 7. Rasterize
     for(const auto &t : vecTrianglesToRaster){
@@ -286,6 +299,7 @@ void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, 
             SDL_RenderLine(renderer, p0.x, p0.y, p1.x, p1.y);
             SDL_RenderLine(renderer, p1.x, p1.y, p2.x, p2.y);
             SDL_RenderLine(renderer, p2.x, p2.y, p0.x, p0.y);
+
         } else {
             drawFilledTriangle(renderer, p0, p1, p2);
         }

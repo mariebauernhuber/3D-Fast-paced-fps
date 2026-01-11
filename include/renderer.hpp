@@ -14,7 +14,7 @@ enum class CullMode {
 };
 
 void drawFilledTriangle(SDL_Renderer* renderer, vec2d p0, vec2d p1, vec2d p2);
-void CalculateScreenTransforms();
+void CalculateScreenTransforms(SDL_Window* window);
 void CalculateScreenProjection();
 void CalculateDeltaTime();
 void execOncePerSec();

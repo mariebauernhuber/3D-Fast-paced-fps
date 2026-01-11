@@ -238,6 +238,5 @@ int Triangle_ClipAgainstPlane(vec3d plane_p, vec3d plane_n,
                                               *outside_points[0]);
         return 2;
     }
-
     return 0;
 }
