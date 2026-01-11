@@ -12,11 +12,14 @@
 #include <imgui.h>
 #include "../imgui/backends/imgui_impl_sdl3.h"
 #include "../imgui/backends/imgui_impl_sdlrenderer3.h"
+#include <map>
 
 extern bool debugModeTogggled;
 extern float deltaTime;
 extern float targetFrameRate;
 extern float realFrameRate;
+
+extern long unsigned int selectedIndex;
 
 bool paused = false;
 
@@ -40,6 +43,109 @@ float fMouseSensitivity = 0.0025f;
 
 bool consoleOpen = false;
 
+void DrawObjectEditor(std::vector<Object3D>& objects) {
+    static int selectedIndex = 0;
+    
+    if (ImGui::CollapsingHeader("Object3D Editor")) {
+        // Object selector listbox
+        ImGui::BeginListBox("Select Object", ImVec2(0, 80));
+        for (int i = 0; i < objects.size(); ++i) {
+            std::string displayName = "Unnamed Object " + std::to_string(i);
+            auto nameIt = objects[i].properties.find("name");
+            if (nameIt != objects[i].properties.end()) {
+                displayName = nameIt->second;
+            }
+            if (ImGui::Selectable(displayName.c_str(), selectedIndex == i)) {
+                selectedIndex = i;
+            }
+        }
+        ImGui::EndListBox();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Add Object")) {
+            objects.emplace_back();
+            selectedIndex = objects.size() - 1;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Delete Selected") && objects.size() > 0) {
+            objects.erase(objects.begin() + selectedIndex);
+            if (selectedIndex >= objects.size()) {
+                selectedIndex = objects.size() - 1;
+            }
+            if (selectedIndex < 0) selectedIndex = 0;
+        }
+
+        // Edit selected object
+        if (selectedIndex >= 0 && selectedIndex < objects.size()) {
+            Object3D& object = objects[selectedIndex];
+            
+            // Transform editing section
+            if (ImGui::CollapsingHeader("Transform")) {
+                ImGui::DragFloat3("Position", &object.position.x, 0.1f);
+                ImGui::DragFloat3("Rotation", &object.rotation.x, 0.1f);
+                ImGui::DragFloat3("Scale", &object.scale.x, 0.1f);
+            }
+
+            // Properties table (same as before)
+            if (ImGui::CollapsingHeader("Custom Properties")) {
+                if (ImGui::BeginTable("Object Properties", 3, 
+                    ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable)) {
+                    ImGui::TableSetupColumn("Property");
+                    ImGui::TableSetupColumn("Value");
+                    ImGui::TableSetupColumn("Action");
+                    ImGui::TableHeadersRow();
+
+                    for (auto it = object.properties.begin(); it != object.properties.end(); ) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        
+                        ImGui::PushID(it->first.c_str());
+                        char keyBuf[256];
+                        strcpy(keyBuf, it->first.c_str());
+                        ImGui::InputText("##key", keyBuf, sizeof(keyBuf));
+                        
+                        if (strlen(keyBuf) != it->first.size() || strcmp(keyBuf, it->first.c_str()) != 0) {
+                            if (strlen(keyBuf) > 0) {
+                                object.properties[keyBuf] = it->second;
+                                if (strcmp(keyBuf, it->first.c_str()) != 0) {
+                                    object.properties.erase(it->first);
+                                }
+                                it = object.properties.find(keyBuf);
+                            }
+                        }
+
+                        ImGui::TableNextColumn();
+                        char valBuf[256];
+                        strcpy(valBuf, it->second.c_str());
+                        ImGui::InputText("##value", valBuf, sizeof(valBuf));
+                        it->second = valBuf;
+
+                        ImGui::TableNextColumn();
+                        if (ImGui::Button("Delete")) {
+                            object.properties.erase(it->first);
+                            ImGui::PopID();
+                            continue;
+                        }
+                        ImGui::PopID();
+                        ++it;
+                    }
+                    ImGui::EndTable();
+                }
+
+                // Add new property
+                static char newKey[256] = "", newVal[256] = "";
+                ImGui::InputText("New Property", newKey, sizeof(newKey));
+                ImGui::InputText("Value", newVal, sizeof(newVal));
+                if (ImGui::Button("Add") && strlen(newKey) > 0) {
+                    object.properties[newKey] = newVal;
+                    newKey[0] = newVal[0] = '\0';
+                }
+            }
+        } else {
+            ImGui::Text("No objects available");
+        }
+    }
+}
 int main(int argc, char* argv[]){
     if(!SDL_Init(SDL_INIT_VIDEO)){
         return 1;
@@ -55,6 +161,8 @@ int main(int argc, char* argv[]){
     ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
     ship.position = {0.0f, 0.0f, 5.0f};
     ship.rotation = {0.0f, 0.0f, 0.0f};
+    ship.properties["sillyness"] = "mrowwww";
+    ship.properties["name"] = "Test ship 1";
     objects.push_back(ship);
 
     Object3D ship2;
@@ -131,7 +239,7 @@ int main(int argc, char* argv[]){
 				paused = !paused;
 
 			}
-			if(event.key.scancode == SDL_SCANCODE_F8) {
+			if(event.key.scancode == SDL_SCANCODE_GRAVE) {
 				debugModeTogggled = !debugModeTogggled;
 			};
 			if (event.key.scancode == SDL_SCANCODE_F6) {
@@ -230,11 +338,13 @@ int main(int argc, char* argv[]){
 		nObjRenderCycles++;
 	    }
 
-            ImGui_ImplSDL3_NewFrame();
-	    ImGui::NewFrame();
-	    if(debugModeTogggled){ImGui::ShowDemoWindow(NULL);}
-	    ImGui::Render();
-	    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
+	    if(debugModeTogggled){
+		    ImGui_ImplSDL3_NewFrame();
+		    ImGui::NewFrame();
+		    DrawObjectEditor(objects);
+		    ImGui::Render();
+		    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
+	    }
 
 	    // 8. Present final frame
 	    SDL_RenderPresent(renderer);

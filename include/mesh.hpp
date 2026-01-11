@@ -2,6 +2,7 @@
 #include "geometry.hpp"
 #include <vector>
 #include <string>
+#include <map>
 
 struct mesh{
 	std::vector<triangle> tris;
@@ -14,6 +15,7 @@ struct Object3D{
 	vec3d position;
 	vec3d rotation;
 	vec3d scale = {1,1,1};
-
 	mat4x4 GetWorldMatrix();
+	std::map<std::string, std::string> properties;
+	long unsigned int selectedIndex;
 };
