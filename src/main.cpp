@@ -25,11 +25,6 @@ extern unsigned long long nDrawCycles;
 extern vec3d vCamera;
 extern vec3d vLookDir;
 
-mesh meshCube;
-mesh meshCube2;
-mesh teapotMesh;
-mesh teddybearMesh;
-
 float fYaw   = 0.0f;   // left/right
 float fPitch = 0.0f;   // up/down
 float fMaxPitch = 1.55f;
@@ -47,54 +42,47 @@ int main(int argc, char* argv[]){
 
     CalculateScreenTransforms(window);
     CalculateScreenProjection();
-   
-    meshCube.LoadFromObjectFile("src/VideoShip.obj");
-    meshCube2.LoadFromObjectFile("src/VideoShip.obj");
-    teapotMesh.LoadFromObjectFile("src/teapot.obj");
-    teddybearMesh.LoadFromObjectFile("src/teddybear.obj");
 
     Object3D ship;
-    ship.meshData = meshCube;
+    ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
     ship.position = {0.0f, 0.0f, 5.0f};
     ship.rotation = {0.0f, 0.0f, 0.0f};
+    objects.push_back(ship);
 
     Object3D ship2;
-    ship2.meshData = meshCube;
+    ship2.meshData.LoadFromObjectFile("src/VideoShip.obj");
     ship2.position = {0.0f, 0.0f, 15.0f};
     ship2.rotation = {0.0f, 0.0f, 0.0f};
+    objects.push_back(ship2);
 
     Object3D ship3;
-    ship3.meshData = meshCube;
+    ship3.meshData.LoadFromObjectFile("src/VideoShip.obj");
     ship3.position = {0.0f, 0.0f, 25.0f};
     ship3.rotation = {0.0f, 0.0f, 0.0f};
+    objects.push_back(ship3);
 
     Object3D movingShip;
-    movingShip.meshData = meshCube;
+    movingShip.meshData.LoadFromObjectFile("src/VideoShip.obj");
     movingShip.position = {10.0f, 0.0f, 0.0f};
     movingShip.rotation = {5.0f, 0.0f, 0.0f};
+    objects.push_back(movingShip);
 
     Object3D teapot;
-    teapot.meshData = teapotMesh;
+    teapot.meshData.LoadFromObjectFile("src/teapot.obj");
     teapot.position = {25.0f, 0.0f, 25.0f};
     teapot.rotation = {0.0f, 180.0f, 0.0f};
+    objects.push_back(teapot);
 
     Object3D teddybear;
-    teddybear.meshData = teddybearMesh;
+    teddybear.meshData.LoadFromObjectFile("src/teddybear.obj");
     teddybear.position = {50.0f, 0.0f, 25.0f};
     teddybear.rotation = {0.0f, 180.0f, 0.0f};
-
-    objects.push_back(ship);
-    objects.push_back(ship2);
-    objects.push_back(ship3);
-    objects.push_back(movingShip);
-    objects.push_back(teapot);
     objects.push_back(teddybear);
+
 
     SDL_SetWindowRelativeMouseMode(window, true);
 
     std::cout << "Init done!";
-
-    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 
     bool is_running = true;
     SDL_Event event;
