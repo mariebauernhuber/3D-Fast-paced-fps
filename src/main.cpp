@@ -184,7 +184,6 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-
     targetWindowWidth = 1920;
     targetWindowHeight = 1080;
 
@@ -204,9 +203,6 @@ int main(int argc, char* argv[]){
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-
-std::string vCode = LoadShaderSource("../vertex.glsl");
-std::string fCode = LoadShaderSource("../fragment.glsl");
 
 const char* vSource = R"(
 #version 330 core
@@ -229,6 +225,8 @@ void main() {
     FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); 
 };
 )";
+
+const char* fSourceNew = LoadShaderSource("../fragment.glsl").c_str();
 
 mainShaderProgram = CreateShaderProgram(vSource, fSource);
 
@@ -438,8 +436,6 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 	    glBindVertexArray(0);
 	    ImGui::Render();
 	    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-
 
 	    // 8. Present final frame
 	    SDL_GL_SwapWindow(window);
