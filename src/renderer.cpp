@@ -1,10 +1,14 @@
 #include "../include/renderer.hpp"
+#include "../include/frustumCulling.hpp"
+#include <GL/glew.h>
+#include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_video.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include "../include/mesh.hpp"
+#include "imgui.h"
 #include <SDL3/SDL.h>
 
 bool debugModeTogggled = false;
@@ -12,7 +16,8 @@ extern unsigned long long nObjRenderCycles;
 extern unsigned long long nTrisPushedBack;
 unsigned long long nDrawCycles = 0;
 
-int windowWidth, windowHeight;
+
+extern int windowWidth, windowHeight;
 float fTheta;
 float fNear = 0.1f;
 float fFar = 1000.0f;
@@ -20,6 +25,8 @@ float fFov = 90.0f;
 float fFovRad;
 float fAspectRatio;
 float deltaTime;
+float deltaTimeMod = 1;
+float newDeltaTime;
 
 float targetFrameRate = 60;
 float realFrameRate;
@@ -45,49 +52,6 @@ mat4x4 matWorld = Matrix_MakeIdentity();
 
 CullMode gCullMode = CullMode::Back;
 
-void drawFilledTriangle(SDL_Renderer* renderer, vec2d p0, vec2d p1, vec2d p2) {
-    // Sort vertices by y
-    if (p1.y < p0.y) std::swap(p0, p1);
-    if (p2.y < p0.y) std::swap(p0, p2);
-    if (p2.y < p1.y) std::swap(p1, p2);
-
-    auto interpX = [](vec2d a, vec2d b, float y) -> float {
-        if (a.y == b.y) return a.x; // avoid division by zero
-        return a.x + (b.x - a.x) * ((y - a.y) / (b.y - a.y));
-    };
-
-    auto drawScanline = [&](int y, float x0, float x1) {
-        int ix0 = int(std::round(x0));
-        int ix1 = int(std::round(x1));
-        if (ix0 > ix1) std::swap(ix0, ix1);
-        SDL_RenderLine(renderer, ix0, y, ix1, y);
-    }; 
-
-    int yStart, yEnd;
-
-    // Top half of triangle
-    if (p1.y != p0.y) { // avoid degenerate top flat
-        yStart = int(std::ceil(p0.y));
-        yEnd   = int(std::floor(p1.y));
-        for (int y = yStart; y <= yEnd; y++) {
-            float xa = interpX(p0, p1, float(y));
-            float xb = interpX(p0, p2, float(y));
-            drawScanline(y, xa, xb);
-        }
-    }
-
-    // Bottom half of triangle
-    if (p2.y != p1.y) { // avoid degenerate bottom flat
-        yStart = int(std::ceil(p1.y));
-        yEnd   = int(std::floor(p2.y));
-        for (int y = yStart; y <= yEnd; y++) {
-            float xa = interpX(p1, p2, float(y));
-            float xb = interpX(p0, p2, float(y));
-            drawScanline(y, xa, xb);
-        }
-    }
-}
-
 void CalculateScreenTransforms(SDL_Window* window){
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
     fAspectRatio = (float)windowHeight / (float)windowWidth;
@@ -96,8 +60,8 @@ void CalculateScreenTransforms(SDL_Window* window){
 
 void CalculateScreenProjection(){
     matProj = Matrix_MakeProjection(90.0f, fAspectRatio, fNear, fFar);
-    std::cout << "matProj made!\n";
-    std::cout << "fAspectRatio: " << fAspectRatio;
+    std::cout << "\nmatProj made!";
+    std::cout << "\nfAspectRatio: " << fAspectRatio;
     std::cout << "\nfNear: " << fNear;
     std::cout << "\nfFar: " << fFar;
     std::cout << "\nwindowHeight: " << (float)windowHeight;
@@ -164,75 +128,22 @@ void PrintDebugInfo(){
 }
 
 vec2d ProjectToScreen(const vec3d &v) {
+    // v.x and v.y are in range [-1, 1] after the perspective divide
     return {
-        (v.x + 1.0f) * 0.5f * (float)windowWidth,                 // X mapped to screen width
-        (1.0f - (v.y + 1.0f) * 0.5f) * (float)windowHeight       // Y flipped & mapped to screen height
+        (v.x + 1.0f) * 0.5f * (float)windowWidth,          // Maps -1..1 to 0..Width
+        (1.0f - (v.y + 1.0f) * 0.5f) * (float)windowHeight // Maps -1..1 to 0..Height (inverted Y)
     };
 }
 
-bool IsTriangleInView(const triangle &tri) {
-    // Check if any vertex is inside NDC cube
-    for(int i=0; i<3; i++){
-        if(tri.p[i].x >= -1.0f && tri.p[i].x <= 1.0f &&
-           tri.p[i].y >= -1.0f && tri.p[i].y <= 1.0f &&
-           tri.p[i].z >= 0.0f  && tri.p[i].z <= 1.0f) {
-            return true; // At least one vertex is inside view
-        }
-    }
-    return false; // Fully outside
+void DrawLine(float x1, float y1, float x2, float y2){
+	glBegin(GL_LINES);
+	glColor3f(1.0f, 0.0f, 1.0f); // red, green, blue values
+	glVertex2f(x1, y1);
+	glVertex2f(x2, y2);
+	glEnd();
 }
 
-struct Plane {
-    vec3d point;
-    vec3d normal;
-};
-
-std::vector<Plane> gFrustumPlanes;
-
-void UpdateFrustumPlanes() {
-    gFrustumPlanes.clear();
-
-    float nearHeight = 2.0f * tanf(fFov * 0.5f * 3.14159265f / 180.0f) * fNear;
-    float nearWidth  = nearHeight / fAspectRatio;
-
-    float farHeight  = 2.0f * tanf(fFov * 0.5f * 3.14159265f / 180.0f) * fFar;
-    float farWidth   = farHeight / fAspectRatio;
-
-    // Near plane
-    gFrustumPlanes.push_back({ {0,0,fNear}, {0,0,1} });
-    // Far plane
-    gFrustumPlanes.push_back({ {0,0,fFar}, {0,0,-1} });
-
-    // Right plane
-    gFrustumPlanes.push_back({ {0,0,0}, Vector_Normalise({fNear/2,0,fNear}) });
-    // Left plane
-    gFrustumPlanes.push_back({ {0,0,0}, Vector_Normalise({-fNear/2,0,fNear}) });
-    // Top plane
-    gFrustumPlanes.push_back({ {0,0,0}, Vector_Normalise({0,nearHeight/2,fNear}) });
-    // Bottom plane
-    gFrustumPlanes.push_back({ {0,0,0}, Vector_Normalise({0,-nearHeight/2,fNear}) });
-}
-
-std::vector<triangle> ClipTriangleToFrustumOptimized(const triangle &tri) {
-    std::vector<triangle> clippedTris;
-    clippedTris.push_back(tri);
-
-    for(const auto &plane : gFrustumPlanes) {
-        std::vector<triangle> newTris;
-        for(auto &t : clippedTris) {
-            triangle t1, t2;
-            int n = Triangle_ClipAgainstPlane(plane.point, plane.normal, t, t1, t2);
-            if(n == 1) newTris.push_back(t1);
-            if(n == 2){ newTris.push_back(t1); newTris.push_back(t2); }
-        }
-        clippedTris = newTris;
-        if(clippedTris.empty()) break; // Fully outside
-    }
-
-    return clippedTris;
-}
-
-void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
+void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
     std::vector<triangle> vecTrianglesToRaster;
 
     mat4x4 matWorld = obj.GetWorldMatrix();
@@ -294,14 +205,30 @@ void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, 
         vec2d p0 = ProjectToScreen(t.p[0]);
         vec2d p1 = ProjectToScreen(t.p[1]);
         vec2d p2 = ProjectToScreen(t.p[2]);
-
-        if(debugModeTogggled){
-            SDL_RenderLine(renderer, p0.x, p0.y, p1.x, p1.y);
-            SDL_RenderLine(renderer, p1.x, p1.y, p2.x, p2.y);
-            SDL_RenderLine(renderer, p2.x, p2.y, p0.x, p0.y);
-
-        } else {
-            drawFilledTriangle(renderer, p0, p1, p2);
-        }
+	
+	DrawLine(p0.x, p0.y, p1.x, p1.y);
+	DrawLine(p1.x, p1.y, p2.x, p2.y);
+	DrawLine(p2.x, p2.y, p0.x, p0.y);
     }
+
+}
+
+void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj) {
+    glUseProgram(shaderProgram);
+
+    // 1. Pass transformation matrices as uniforms
+    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
+    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+
+    mat4x4 matWorld = obj.GetWorldMatrix();
+
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
+
+    // 2. Bind and Draw
+    glBindVertexArray(obj.meshData.VAO); 
+    glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
+    glBindVertexArray(0);
 }

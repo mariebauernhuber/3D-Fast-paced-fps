@@ -5,7 +5,6 @@
 #include "mesh.hpp"
 
 static SDL_Window* window;
-static SDL_Renderer* renderer;
 
 enum class CullMode {
     None,
@@ -13,7 +12,6 @@ enum class CullMode {
     Front
 };
 
-void drawFilledTriangle(SDL_Renderer* renderer, vec2d p0, vec2d p1, vec2d p2);
 void CalculateScreenTransforms(SDL_Window* window);
 void CalculateScreenProjection();
 void CalculateDeltaTime();
@@ -21,8 +19,6 @@ void execOncePerSec();
 void MinuteTimer();
 void PrintDebugInfo();
 vec2d ProjectToScreen(const vec3d &v);
-bool IsTriangleInView(const triangle &tri);
-void UpdateFrustumPlanes();
-std::vector<triangle> ClipTriangleToFrustumOptimized(const triangle &tri);
-void RenderObject(SDL_Renderer* renderer, Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj);
-
+void DrawLine(float x1, float y1, float x2, float y2);
+void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj);
+void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj);
