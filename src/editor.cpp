@@ -1,22 +1,35 @@
 #include "../include/editor.hpp"
 #include <SDL3/SDL_init.h>
 #include <imgui.h>
+#include <GL/glew.h>
 
 extern float deltaTime;
 extern float deltaTimeMod;
+extern float newDeltaTime;
 extern float targetFrameRate;
 extern bool is_running;
+extern GLuint fbo, textureColorBuffer;
+extern vec3d vCamera;
 
 void DrawObjectEditor(std::vector<Object3D>& objects) {
     static int selectedIndex = 0;
+
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+
+    ImGui::Begin("Game Viewport");
+	ImGui::Image((void*)(intptr_t)textureColorBuffer, ImGui::GetContentRegionAvail(), ImVec2(0, 0), ImVec2(1, -1));
+	ImGui::End();
+
+	ImGui::Begin("Object Editor", NULL, ImGuiViewportFlags());
 
     	if(ImGui::Button("Exit App")){
 		is_running = false;
 	}
 
-    	ImGui::DragFloat("DeltaTime", &deltaTime);
-	ImGui::DragFloat("Target Framerate", &targetFrameRate);
+    	ImGui::DragFloat("deltaTimeForCalc", &newDeltaTime);
+    	ImGui::DragFloat("Actual deltaTime", &deltaTime);
 	ImGui::DragFloat("DeltaTime Modifier", &deltaTimeMod);
+	ImGui::DragFloat("Target Framerate", &targetFrameRate);
     
     if (ImGui::CollapsingHeader("Object3D Editor")) {
         // Object selector listbox
@@ -117,4 +130,10 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
             ImGui::Text("No objects available");
         }
     }
+
+	if(ImGui::CollapsingHeader("Camera and Player Settings")){
+		ImGui::DragFloat3("Camera Pos", &vCamera.x, 0.1f);
+	}
+
+	ImGui::End();
 }

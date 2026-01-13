@@ -3,10 +3,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <GL/glew.h>
 
 struct mesh{
 	std::vector<triangle> tris;
-
+	GLuint VBO, VAO;
 	bool LoadFromObjectFile(const std::string& filename);
 };
 
@@ -19,3 +20,5 @@ struct Object3D{
 	std::map<std::string, std::string> properties;
 	long unsigned int selectedIndex;
 };
+
+void InitializeObjectGPU(Object3D &obj);

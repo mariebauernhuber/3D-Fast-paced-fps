@@ -9,7 +9,7 @@ IMGUI_BACKENDS := $(IMGUI_DIR)/backends
 
 CPPFLAGS := -Wall -Wextra -g -Iinclude $(SDL_CFLAGS)
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS)
-LDFLAGS  := $(SDL_LIBS) -lm -lGL
+LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW
 
 SRC_DIR   := src
 BUILD_DIR := build

@@ -2,6 +2,7 @@
 #include "../include/geometry.hpp"
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 struct Plane {
     vec3d point;
@@ -63,8 +64,10 @@ std::vector<triangle> ClipTriangleToFrustumOptimized(const triangle &tri) {
             if(n == 2){ newTris.push_back(t1); newTris.push_back(t2); }
         }
         clippedTris = newTris;
-        if(clippedTris.empty()) break; // Fully outside
+        if(clippedTris.empty()){ 
+		std::cout << "Entire triag cliped!";
+		break; // Fully outside
+	}
     }
-
     return clippedTris;
 }
