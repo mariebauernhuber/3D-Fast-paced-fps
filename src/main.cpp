@@ -17,11 +17,13 @@
 #include "../include/renderer.hpp"
 #include "../include/frustumCulling.hpp"
 #include <imgui.h>
+#include "../imguizmo/ImGuizmo.h"
 #include "../imgui/backends/imgui_impl_sdl3.h"
 #include "../imgui/backends/imgui_impl_sdlrenderer3.h"
 #include "../imgui/backends/imgui_impl_opengl3.h"
 #include "../include/editor.hpp"
 #include <map>
+#include "../include/imgui-gruvbox.hpp"
 
 extern bool debugModeTogggled;
 extern float deltaTime;
@@ -33,6 +35,8 @@ extern float realFrameRate;
 extern long unsigned int selectedIndex;
 
 float windowWidth, windowHeight;
+
+std::string cullingMode = "GL_BACK";
 
 bool paused = false;
 bool is_running = false;
@@ -55,15 +59,30 @@ float fPitch = 0.0f;   // up/down
 float fMaxPitch = 1.55f;
 float fMouseSensitivity = 0.0025f;
 
-bool consoleOpen = false;
-
-GLuint fbo, textureColorBuffer;
-GLuint rbo;
+GLuint fbo, textureColorBuffer, rbo;
 
 GLuint mainShaderProgram;
 
 std::string LoadShaderSource(const char* filePath) {
-    std::ifstream file(filePath);
+    // Open at the end to immediately find the file size
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+    
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + std::string(filePath));
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg); // Reset to the beginning
+
+    std::string buffer(size, '\0');
+    if (file.read(&buffer[0], size)) {
+        return buffer;
+    }
+    
+    return "";
+}
+std::string LoadShaderSourceTest() {
+    std::ifstream file("../vertex.glsl");
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::cout << buffer.str();
@@ -184,6 +203,8 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+glEnable(GL_DEBUG_OUTPUT);
+
     targetWindowWidth = 1920;
     targetWindowHeight = 1080;
 
@@ -201,43 +222,29 @@ int main(int argc, char* argv[]){
 
     // 5. Global OpenGL State Setup
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
+    if(cullingMode == "GL_BACK"){glCullFace(GL_BACK);
+    }else if(cullingMode == "GL_FRONT"){glCullFace(GL_FRONT);}
 
-const char* vSource = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-void main() {
-	gl_Position = projection * view * model * vec4(aPos, 1.0f);
-
-};
-)";
-const char* fSource = R"(
-//fragment.glsl
-#version 330 core
-out vec4 FragColor; // The output variable for pixel color
-
-void main() {
-    // RGBA format (Red, Green, Blue, Alpha)
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); 
-};
-)";
-
-const char* fSourceNew = LoadShaderSource("../fragment.glsl").c_str();
-
-mainShaderProgram = CreateShaderProgram(vSource, fSource);
+    mainShaderProgram = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("fragment.glsl").c_str());
 
     Object3D ship;
     ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
-    ship.position = {0.0f, 0.0f, 5.0f};
+    ship.position = {0.0f, 0.0f, 10.0f};
     ship.rotation = {0.0f, 0.0f, 0.0f};
+    ship.rotationPerTick = {0.0f, 0.0f, 0.0f};
     ship.properties["sillyness"] = "mrowwww";
     ship.properties["name"] = "Test ship 1";
     InitializeObjectGPU(ship);
-    objects.push_back(ship);
+
+    Object3D teddy;
+    teddy.meshData.LoadFromObjectFile("src/teddybear.obj");
+    teddy.position = {40.0f, 0.0f, 0.0f};
+    teddy.rotation = {0.0f, 0.0f, 0.0f};
+    teddy.rotationPerTick = {5.0f, 0.0f, 0.0f};
+    teddy.properties["name"] = "A pretty teddybear :3";
+    InitializeObjectGPU(teddy);
+    
 
     // 7. Framebuffer (FBO) Initialization
     glGenFramebuffers(1, &fbo);
@@ -265,8 +272,6 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 
     SetupScreenQuad();
     
-    GLuint screenVAO, screenVBO, screenShader;
-
     SDL_SetWindowFullscreen(window, true);
 
     CalculateScreenTransforms(window);
@@ -321,9 +326,11 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 				debugModeTogggled = !debugModeTogggled;
 			};
 			if (event.key.scancode == SDL_SCANCODE_F6) {
-			    if (gCullMode == CullMode::Back) gCullMode = CullMode::Front;
-			    else if (gCullMode == CullMode::Front) gCullMode = CullMode::None;
-			    else gCullMode = CullMode::Back;
+				if(cullingMode == "GL_BACK"){
+					cullingMode = "GL_FRONT";
+				}else if(cullingMode == "GL_FRONT"){
+					cullingMode = "GL_BACK";
+				}
 			}
 		    }
 
@@ -396,8 +403,10 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 	    }
 
 	    vLookDir = Vector_Normalise(vForward);
-	
-	    ship.rotation.y = ship.rotation.y + (5.0f * newDeltaTime);
+
+	    vec3d temp = {newDeltaTime, newDeltaTime, newDeltaTime};
+
+	    ship.rotation.x = ship.rotation.x + (ship.rotationPerTick.x * newDeltaTime);
 
 	    // 5. Update view matrix
 	    vec3d vUp = {0, 1, 0};
@@ -411,6 +420,7 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 	    glViewport(0, 0, targetWindowWidth, targetWindowHeight);
 
 	    RenderObjectModern(ship, mainShaderProgram, matView, matProj);
+	    RenderObjectModern(teddy, mainShaderProgram, matView, matProj);
 
 	    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	    glDisable(GL_DEPTH_TEST);
@@ -425,11 +435,20 @@ mainShaderProgram = CreateShaderProgram(vSource, fSource);
 	    glUniform1i(glGetUniformLocation(screenShaderProgram, "screenTexture"), 0);
 
 	    glClear(GL_COLOR_BUFFER_BIT);
+		
+	    gruvboxDark();
+
 	    ImGui_ImplOpenGL3_NewFrame();
 	    ImGui_ImplSDL3_NewFrame();
 	    ImGui::NewFrame();
+	    ImGuizmo::BeginFrame;
 
-	    if(debugModeTogggled){DrawObjectEditor(objects);};
+	    if(debugModeTogggled){
+		    DrawObjectEditor(objects);
+		    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	    }else{
+		    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	    };
 
 	    glBindVertexArray(quadVAO);
 	    glDrawArrays(GL_TRIANGLES, 0, 6);

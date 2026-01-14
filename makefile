@@ -7,6 +7,8 @@ SDL_LIBS   := $(shell pkg-config --libs sdl3 sdl3-ttf)
 IMGUI_DIR := imgui
 IMGUI_BACKENDS := $(IMGUI_DIR)/backends
 
+#IMGUIZMO_DIR := imguizmo
+
 CPPFLAGS := -Wall -Wextra -g -Iinclude $(SDL_CFLAGS)
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS)
 LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW
@@ -25,12 +27,15 @@ IMGUI_SRCS := $(IMGUI_DIR)/imgui.cpp \
               $(IMGUI_DIR)/imgui_tables.cpp \
               $(IMGUI_BACKENDS)/imgui_impl_sdl3.cpp \
               $(IMGUI_BACKENDS)/imgui_impl_opengl3.cpp \
-	      $(IMGUI_BACKENDS)/imgui_impl_sdlrenderer3.cpp
+	      $(IMGUI_BACKENDS)/imgui_impl_sdlrenderer3.cpp 
+
+#IMGUIZMO_SRCS := $(IMGUIZMO_DIR)/ImGuizmo.cpp
 
 OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
 IMGUI_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(notdir $(IMGUI_SRCS)))
+#IMGUIZMO_OBJS := $(patsubst $(IMGUIZMO_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(notdir $(IMGUIZMO_SRCS)))
 
-ALL_OBJS := $(OBJS) $(IMGUI_OBJS)
+ALL_OBJS := $(OBJS) $(IMGUI_OBJS) #$(IMGUIZMO_OBJS)
 
 TARGET := $(BUILD_DIR)/app
 
@@ -49,6 +54,10 @@ $(BUILD_DIR)/%.o: $(IMGUI_DIR)/%.cpp | $(BUILD_DIR)
 
 # ImGui backend files
 $(BUILD_DIR)/%.o: $(IMGUI_BACKENDS)/%.cpp | $(BUILD_DIR)
+	$(CC) $(CPPFLAGS) -c $< -o $@
+
+# ImGuiZmo
+$(BUILD_DIR)/%.o: $(IMGUIZMO_DIR)/%.cpp | $(BUILD_DIR)
 	$(CC) $(CPPFLAGS) -c $< -o $@
 
 $(BUILD_DIR):

@@ -1,6 +1,8 @@
 #include "../include/mesh.hpp"
 #include "../include/geometry.hpp"
 
+extern std::vector<Object3D> objects;
+
 mat4x4 Object3D::GetWorldMatrix()  {
 
 	mat4x4 matRotX = Matrix_MakeRotationX(rotation.x);
@@ -42,4 +44,5 @@ void InitializeObjectGPU(Object3D &obj) {
     // 5. Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    objects.push_back(obj);
 }

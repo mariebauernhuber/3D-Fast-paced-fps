@@ -143,7 +143,7 @@ void DrawLine(float x1, float y1, float x2, float y2){
 	glEnd();
 }
 
-void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
+void RenderObjectCPU(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
     std::vector<triangle> vecTrianglesToRaster;
 
     mat4x4 matWorld = obj.GetWorldMatrix();
