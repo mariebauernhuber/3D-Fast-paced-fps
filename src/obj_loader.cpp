@@ -40,3 +40,43 @@ bool mesh::LoadFromObjectFile(const std::string& filename) {
     }
     return true;
 }
+
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
+bool loadObjPositions(const std::string& path, std::vector<float>& outVertices){
+    std::ifstream file(path);
+    if (!file.is_open())
+        return false;
+
+    outVertices.clear();
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        // Skip empty lines and comments
+        if (line.empty() || line[0] == '#')
+            continue;
+
+        std::istringstream iss(line);
+        std::string type;
+        iss >> type;
+
+        // Only handle vertex position lines: "v x y z"
+        if (type == "v")
+        {
+            float x, y, z;
+            if (!(iss >> x >> y >> z))
+                continue; // malformed line, skip
+
+            outVertices.push_back(x);
+            outVertices.push_back(y);
+            outVertices.push_back(z);
+        }
+    }
+
+    return !outVertices.empty();
+}

@@ -10,16 +10,13 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <cstdlib>
 #include "../include/mesh.hpp"
 #include "../include/geometry.hpp"
 #include "../include/renderer.hpp"
-#include "../include/frustumCulling.hpp"
 #include <imgui.h>
 #include "../imguizmo/ImGuizmo.h"
 #include "../imgui/backends/imgui_impl_sdl3.h"
-#include "../imgui/backends/imgui_impl_sdlrenderer3.h"
 #include "../imgui/backends/imgui_impl_opengl3.h"
 #include "../include/editor.hpp"
 #include <map>
@@ -64,7 +61,6 @@ GLuint fbo, textureColorBuffer, rbo;
 GLuint mainShaderProgram;
 
 std::string LoadShaderSource(const char* filePath) {
-    // Open at the end to immediately find the file size
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     
     if (!file.is_open()) {
@@ -80,13 +76,6 @@ std::string LoadShaderSource(const char* filePath) {
     }
     
     return "";
-}
-std::string LoadShaderSourceTest() {
-    std::ifstream file("../vertex.glsl");
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::cout << buffer.str();
-    return buffer.str();
 }
 
 GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc) {
@@ -193,17 +182,17 @@ void SetupScreenQuad() {
 }
 
 int main(int argc, char* argv[]){
-    // 2. Set OpenGL Attributes for Core Profile 3.3
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
     if(!SDL_Init(SDL_INIT_VIDEO)){
         return 1;
     }
 
-glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT);
 
     targetWindowWidth = 1920;
     targetWindowHeight = 1080;
@@ -227,6 +216,7 @@ glEnable(GL_DEBUG_OUTPUT);
     }else if(cullingMode == "GL_FRONT"){glCullFace(GL_FRONT);}
 
     mainShaderProgram = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("fragment.glsl").c_str());
+
 
     Object3D ship;
     ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
@@ -287,6 +277,8 @@ glEnable(GL_DEBUG_OUTPUT);
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Optional: Enable Multi-Viewport
 
     SDL_SetWindowRelativeMouseMode(window, true);
+
+    gruvboxDark();
 
     std::cout << "\nInit done!";
 
@@ -436,7 +428,6 @@ glEnable(GL_DEBUG_OUTPUT);
 
 	    glClear(GL_COLOR_BUFFER_BIT);
 		
-	    gruvboxDark();
 
 	    ImGui_ImplOpenGL3_NewFrame();
 	    ImGui_ImplSDL3_NewFrame();

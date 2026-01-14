@@ -23,3 +23,5 @@ struct Object3D{
 };
 
 void InitializeObjectGPU(Object3D &obj);
+
+bool loadObjPositions(const std::string& path, std::vector<float>& outVertices);
