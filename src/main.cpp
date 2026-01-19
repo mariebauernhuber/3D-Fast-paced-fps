@@ -21,6 +21,7 @@
 #include "../include/editor.hpp"
 #include <map>
 #include "../include/imgui-gruvbox.hpp"
+#include "../include/shader-utils.hpp"
 
 extern bool debugModeTogggled;
 extern float deltaTime;
@@ -28,6 +29,12 @@ extern float deltaTimeMod;
 extern float newDeltaTime;
 extern float targetFrameRate;
 extern float realFrameRate;
+extern bool isImGuiGameViewportInMouseLock;
+bool shouldAllowMove = true;
+extern float secondsElapsedSinceStartup;
+extern float secondTiming;
+
+std::vector<Object3D> objects;
 
 extern long unsigned int selectedIndex;
 
@@ -39,8 +46,6 @@ bool paused = false;
 bool is_running = false;
 
 unsigned long long nObjRenderCycles = 0;
-
-extern std::vector<Object3D> objects;
 
 extern CullMode gCullMode;
 
@@ -59,127 +64,12 @@ float fMouseSensitivity = 0.0025f;
 GLuint fbo, textureColorBuffer, rbo;
 
 GLuint mainShaderProgram;
-
-std::string LoadShaderSource(const char* filePath) {
-    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
-    
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + std::string(filePath));
-    }
-
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg); // Reset to the beginning
-
-    std::string buffer(size, '\0');
-    if (file.read(&buffer[0], size)) {
-        return buffer;
-    }
-    
-    return "";
-}
-
-GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc) {
-    // 1. Compile Vertex Shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSrc, NULL);
-    glCompileShader(vertexShader);
-
-    GLint ok = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &ok);
-    if(!ok){
-	GLint len = 0;
-	glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &len);
-	std::string log(len, ' ');
-	glGetShaderInfoLog(vertexShader, len, nullptr, log.data());
-	std::cerr << "vertexShader compile error: " << log << "\n";
-    }
-    
-    // 2. Compile Fragment Shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSrc, NULL);
-    glCompileShader(fragmentShader);
-	
-    ok = 0;
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &ok);
-    if(!ok){
-	GLint len = 0;
-	glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &len);
-	std::string log(len, ' ');
-	glGetShaderInfoLog(fragmentShader, len, nullptr, log.data());
-	std::cerr << "fragmentShader compile error: " << log << "\n";
-    }
-
-    // 3. Link Program
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
-
-    // 4. Cleanup individual shaders (they are now linked into the program)
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return program;
-}
+GLuint colorCycleShader;
 
 int targetWindowWidth, targetWindowHeight;
 
-GLuint quadVAO, quadVBO;
-GLuint screenShaderProgram;
-const float quadVertices[] = {
-	-1.0f, 1.0f,	0.0f, 1.0f,
-	-1.0f, -1.0f,	0.0f, 0.0f,
-	1.0f, 1.0f, 	1.0f, 1.0f,
-
-	-1.0f, -1.0f,	0.0f, 0.0f, 
-	1.0f, -1.0f,	1.0f, 0.0f,
-	1.0f, 1.0f, 	1.0f, 1.0f
-};
-
-void SetupScreenQuad() {
-	const char* screenVertexSource = R"(
-	#version 330 core
-	layout (location = 0) in vec2 aPos;
-	layout (location =1) in vec2 aTexCoord;
-
-	out vec2 TexCoord;
-
-	void main(){
-		gl_Position = vec4(aPos, 0.0, 1.0);
-		TexCoord = aTexCoord;
-	}
-	)";
-
-	const char* screenFragmentSource = R"(
-	#version 330 core
-	out vec4 FragColor;
-
-	in vec2 TexCoord;
-
-	uniform sampler2D screenTexture;
-
-	void main() {
-	FragColor = texture(screenTexture, TexCoord);
-	}
-	)";
-
-	screenShaderProgram = CreateShaderProgram(screenVertexSource, screenFragmentSource);
-
-	glGenVertexArrays(1, &quadVAO);
-	glGenBuffers(1, &quadVBO);
-
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	glBindVertexArray(0);
-}
+extern GLuint quadVAO, quadVBO;
+extern GLuint screenShaderProgram;
 
 int main(int argc, char* argv[]){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -187,6 +77,7 @@ int main(int argc, char* argv[]){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    glFrontFace(GL_CW);  // Now CW triangles are front faces
 
     if(!SDL_Init(SDL_INIT_VIDEO)){
         return 1;
@@ -211,30 +102,38 @@ int main(int argc, char* argv[]){
 
     // 5. Global OpenGL State Setup
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    if(cullingMode == "GL_BACK"){glCullFace(GL_BACK);
-    }else if(cullingMode == "GL_FRONT"){glCullFace(GL_FRONT);}
-
+    glEnable(GL_CULL_FACE);      // Enable culling
+    glCullFace(GL_BACK);         // Cull back faces (default)
+    glFrontFace(GL_CCW);         // Front = CCW (default)
+			     
     mainShaderProgram = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("fragment.glsl").c_str());
 
+    // Reserve for 1000 objects to avoid reallocation
+    objects.reserve(1000);
 
     Object3D ship;
     ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
-    ship.position = {0.0f, 0.0f, 10.0f};
-    ship.rotation = {0.0f, 0.0f, 0.0f};
-    ship.rotationPerTick = {0.0f, 0.0f, 0.0f};
     ship.properties["sillyness"] = "mrowwww";
     ship.properties["name"] = "Test ship 1";
+    ship.position = {0.0f, 0.0f, 10.0f};
+    ship.rotation = {0.0f, 0.0f, 0.0f};
+    ship.rotationPerTick = {1.0f, 0.0f, 0.0f};
     InitializeObjectGPU(ship);
 
+    Object3D dickMaster;
+    dickMaster.meshData.LoadFromObjectFileNew("src/flower.obj");
+    dickMaster.position = {20.0f, 20.0f, 20.0f};
+    dickMaster.rotation = {0.0f, 0.0f, 0.0f};
+    dickMaster.properties["name"] = "sometimes i wonder if you know what it means";
+    InitializeObjectGPU(dickMaster);
+
     Object3D teddy;
-    teddy.meshData.LoadFromObjectFile("src/teddybear.obj");
+    teddy.meshData.LoadFromObjectFileNew("src/teddybear.obj");
     teddy.position = {40.0f, 0.0f, 0.0f};
     teddy.rotation = {0.0f, 0.0f, 0.0f};
     teddy.rotationPerTick = {5.0f, 0.0f, 0.0f};
     teddy.properties["name"] = "A pretty teddybear :3";
     InitializeObjectGPU(teddy);
-    
 
     // 7. Framebuffer (FBO) Initialization
     glGenFramebuffers(1, &fbo);
@@ -261,7 +160,6 @@ int main(int argc, char* argv[]){
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // Back to default screen
 
     SetupScreenQuad();
-    
     SDL_SetWindowFullscreen(window, true);
 
     CalculateScreenTransforms(window);
@@ -296,7 +194,6 @@ int main(int argc, char* argv[]){
 			CalculateScreenProjection();
 		    }
 
-
 		    if(event.type == SDL_EVENT_KEY_DOWN){
 			if(event.key.scancode == SDL_SCANCODE_F11){
 			    if(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN){
@@ -316,30 +213,40 @@ int main(int argc, char* argv[]){
 			}
 			if(event.key.scancode == SDL_SCANCODE_GRAVE) {
 				debugModeTogggled = !debugModeTogggled;
+				shouldAllowMove = !shouldAllowMove;
 			};
 			if (event.key.scancode == SDL_SCANCODE_F6) {
 				if(cullingMode == "GL_BACK"){
 					cullingMode = "GL_FRONT";
+					glCullFace(GL_FRONT);
 				}else if(cullingMode == "GL_FRONT"){
+					cullingMode = "GL_FRONT_AND_BACK";
+					glCullFace(GL_FRONT_AND_BACK);
+				}else if(cullingMode == "GL_FRONT_AND_BACK"){
 					cullingMode = "GL_BACK";
+					glCullFace(GL_BACK);
 				}
+			}
+			if(event.key.scancode == SDL_SCANCODE_V){
+				shouldAllowMove = !shouldAllowMove;
 			}
 		    }
 
-		if(!debugModeTogggled){
-		    if(event.type == SDL_EVENT_MOUSE_MOTION){
-			fYaw   += event.motion.xrel * fMouseSensitivity;
-			fPitch -= event.motion.yrel * fMouseSensitivity;
+		    if(shouldAllowMove){
+			    if(event.type == SDL_EVENT_MOUSE_MOTION){
+				fYaw   += event.motion.xrel * fMouseSensitivity;
+				fPitch -= event.motion.yrel * fMouseSensitivity;
 
-			// Clamp pitch to avoid flipping
-			if (fPitch > fMaxPitch)  fPitch = fMaxPitch;
-			if (fPitch < -fMaxPitch) fPitch = -fMaxPitch;
-		    }
-		}
-
+				// Clamp pitch to avoid flipping
+				if (fPitch > fMaxPitch)  fPitch = fMaxPitch;
+				if (fPitch < -fMaxPitch) fPitch = -fMaxPitch;
+			    }
+			};
 	    }
 
+	    int timeLoc = glGetUniformLocation(mainShaderProgram, "uTime");
 	    glUseProgram(mainShaderProgram);
+	    glUniform1f(timeLoc, secondTiming);  // pass time to shader
 
 	    // 1. Update delta time
 	    CalculateDeltaTime();
@@ -356,7 +263,7 @@ int main(int argc, char* argv[]){
 	    // 3. Process keyboard input for camera movement
 	    const bool *key_states = SDL_GetKeyboardState(NULL);
 	    float fMoveSpeed = 8.0f * deltaTime;
-		
+	    if(shouldAllowMove){
 	    // Forward / Back
 	    if (key_states[SDL_SCANCODE_W])
 		vCamera = Vector_Add(vCamera, Vector_Mul(Vector_Normalise({vLookDir.x, 0.0f, vLookDir.z}), fMoveSpeed));
@@ -375,6 +282,7 @@ int main(int argc, char* argv[]){
 		vCamera.y += 8.0f * deltaTime;
 	    if (key_states[SDL_SCANCODE_LSHIFT])
 		vCamera.y -= 8.0f * deltaTime;
+		}
 
 	    // 4. Update camera orientation based on mouse look
 	    vec3d vForward;
@@ -386,7 +294,7 @@ int main(int argc, char* argv[]){
 		    };
 	    }
 
-	    if(debugModeTogggled){
+	    if(!shouldAllowMove){
 		    if(SDL_GetWindowMouseGrab(window)){ SDL_SetWindowMouseGrab(window, false); };
 		    if(SDL_GetWindowRelativeMouseMode(window)){ SDL_SetWindowRelativeMouseMode(window, false); };
 	    }else{
@@ -396,9 +304,15 @@ int main(int argc, char* argv[]){
 
 	    vLookDir = Vector_Normalise(vForward);
 
-	    vec3d temp = {newDeltaTime, newDeltaTime, newDeltaTime};
+	    for(int i = 0 ; i < objects.size(); i++){
+		    objects[i].rotation.x = objects[i].rotation.x + objects[i].rotationPerTick.x * newDeltaTime;
+		    objects[i].rotation.y = objects[i].rotation.y + objects[i].rotationPerTick.y * newDeltaTime;
+		    objects[i].rotation.z = objects[i].rotation.z + objects[i].rotationPerTick.z * newDeltaTime;
 
-	    ship.rotation.x = ship.rotation.x + (ship.rotationPerTick.x * newDeltaTime);
+		    //objects[i].position.x = objects[i].position.x + objects[i].positionPerTick.x * newDeltaTime;
+		    //objects[i].position.y = objects[i].position.y + objects[i].positionPerTick.y * newDeltaTime;
+		    //objects[i].position.z = objects[i].position.z + objects[i].positionPerTick.z * newDeltaTime;
+	    };
 
 	    // 5. Update view matrix
 	    vec3d vUp = {0, 1, 0};
@@ -411,8 +325,9 @@ int main(int argc, char* argv[]){
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear both Color and Depth
 	    glViewport(0, 0, targetWindowWidth, targetWindowHeight);
 
-	    RenderObjectModern(ship, mainShaderProgram, matView, matProj);
-	    RenderObjectModern(teddy, mainShaderProgram, matView, matProj);
+	    RenderObjectModernViaID(ship, 0, mainShaderProgram, matView, matProj);
+	    RenderObjectModernViaID(dickMaster, 1, mainShaderProgram, matView, matProj);
+	    RenderObjectModernViaID(teddy, 2, mainShaderProgram, matView, matProj);
 
 	    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	    glDisable(GL_DEPTH_TEST);
@@ -427,12 +342,10 @@ int main(int argc, char* argv[]){
 	    glUniform1i(glGetUniformLocation(screenShaderProgram, "screenTexture"), 0);
 
 	    glClear(GL_COLOR_BUFFER_BIT);
-		
 
 	    ImGui_ImplOpenGL3_NewFrame();
 	    ImGui_ImplSDL3_NewFrame();
 	    ImGui::NewFrame();
-	    ImGuizmo::BeginFrame;
 
 	    if(debugModeTogggled){
 		    DrawObjectEditor(objects);
@@ -455,6 +368,8 @@ int main(int argc, char* argv[]){
 
 	    // 11. Increment draw cycles
 	    nDrawCycles++;
+
+	    MinuteTimer();
     }
 
     SDL_Quit();
