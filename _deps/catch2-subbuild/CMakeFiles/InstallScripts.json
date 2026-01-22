@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/nils/Docs/mistake/_deps/catch2-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

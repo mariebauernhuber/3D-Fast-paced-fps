@@ -1,0 +1,24 @@
+CMakeFiles/app.dir/src/imgui-gruvbox.cpp.o: \
+ /home/nils/Docs/mistake/src/imgui-gruvbox.cpp \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/stdc-predef.h \
+ /home/nils/Docs/mistake/src/../imgui/imgui.h \
+ /home/nils/Docs/mistake/src/../imgui/imconfig.h \
+ /nix/store/qarrb8yfby1yyypm32vabzgxgq3w41ma-gcc-15.2.0/lib/gcc/x86_64-unknown-linux-gnu/15.2.0/include/float.h \
+ /nix/store/qarrb8yfby1yyypm32vabzgxgq3w41ma-gcc-15.2.0/lib/gcc/x86_64-unknown-linux-gnu/15.2.0/include/stdarg.h \
+ /nix/store/qarrb8yfby1yyypm32vabzgxgq3w41ma-gcc-15.2.0/lib/gcc/x86_64-unknown-linux-gnu/15.2.0/include/stddef.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/string.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/libc-header-start.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/features.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/features-time64.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/wordsize.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/timesize.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/sys/cdefs.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/long-double.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/gnu/stubs.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/gnu/stubs-64.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/types/locale_t.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/types/__locale_t.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/strings.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/strings_fortified.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/bits/string_fortified.h \
+ /nix/store/dj43clc5ff7jjnfmhbaj6q4q0h8kpfpm-glibc-2.40-66-dev/include/assert.h

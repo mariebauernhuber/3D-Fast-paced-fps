@@ -21,6 +21,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <catch2/catch.hpp>
 
 extern bool debugModeTogggled;
 extern float deltaTime;
@@ -113,6 +114,8 @@ mesh CreateTestCubeCCW() {
     
     return testMesh;
 }
+
+extern int run_tests();
 
 int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
