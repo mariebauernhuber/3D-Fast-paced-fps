@@ -17,7 +17,6 @@ mat4x4 Object3D::GetWorldMatrix()  {
 }
 
 void InitializeObjectGPU(Object3D &obj) {
-
     std::vector<float> vertices;
     for (const auto& tri : obj.meshData.tris) {
         for (int i = 0; i < 3; i++) {
@@ -26,8 +25,6 @@ void InitializeObjectGPU(Object3D &obj) {
             vertices.push_back(tri.p[i].z);
         }
     }
-
-    objects.push_back(obj);
 
     // 2. Generate and bind buffers
     glGenVertexArrays(1, &obj.meshData.VAO);
@@ -46,4 +43,14 @@ void InitializeObjectGPU(Object3D &obj) {
     // 5. Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+void SetObjDefaults(Object3D &obj){
+	obj.scale = {1.0f, 1.0f, 1.0f};
+	obj.position = {0.0f, 0.0f, 0.0f};
+	obj.rotationPerTick = {0.0f, 0.0f, 0.0f};
+	obj.positionPerTick = {0.0f, 0.0f, 0.0f};
+	obj.relativePositionPerTick = {0.0f, 0.0f, 0.0f};
+	obj.rotation = {0.0f, 0.0f, 0.0f};
+	obj.properties["name"] = "Unnamed Object";
 }

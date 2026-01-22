@@ -22,5 +22,4 @@ vec2d ProjectToScreen(const vec3d &v);
 void DrawLine(float x1, float y1, float x2, float y2);
 void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj);
 void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj);
-void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj);
-
+void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode);

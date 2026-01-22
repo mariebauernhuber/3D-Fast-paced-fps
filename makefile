@@ -4,6 +4,8 @@ CC := g++
 SDL_CFLAGS := $(shell pkg-config --cflags sdl3 sdl3-ttf)
 SDL_LIBS   := $(shell pkg-config --libs sdl3 sdl3-ttf)
 
+ARGS = 
+
 IMGUI_DIR := imgui
 IMGUI_BACKENDS := $(IMGUI_DIR)/backends
 
@@ -11,7 +13,7 @@ IMGUI_BACKENDS := $(IMGUI_DIR)/backends
 
 CPPFLAGS := -Wall -Wextra -g -Iinclude $(SDL_CFLAGS)
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS)
-LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW
+LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW -lglfw
 
 SRC_DIR   := src
 BUILD_DIR := build
@@ -64,7 +66,10 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 run: $(TARGET)
-	./$(TARGET)
+	./$(TARGET) $(ARGS)
+
+test:
+	./$(TARGET) --test
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -72,4 +77,4 @@ clean:
 force:
 	$(MAKE) clean all
 
-.PHONY: all clean run force
+.PHONY: all clean run force test

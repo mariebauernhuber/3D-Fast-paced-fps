@@ -26,7 +26,7 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
         static int selectedIndex = -1;
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
         ImGui::Begin("Game Viewport (press F1 to toggle focus)");
-    	ImGui::Image((void*)(intptr_t)textureColorBuffer, ImVec2(ImGui::GetContentRegionAvail().x, (ImGui::GetContentRegionAvail().x /16)*9), ImVec2(0, 0), ImVec2(1, -1));
+    	ImGui::Image(textureColorBuffer, ImVec2(ImGui::GetContentRegionAvail().x, (ImGui::GetContentRegionAvail().x /16)*9), ImVec2(0, 0), ImVec2(1, -1));
         ImGui::End();
     
         ImGui::Begin("Temp window");
@@ -86,6 +86,7 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
                 ImGui::DragFloat3("Position", &objects[selectedIndex].position.x, 0.1f);
                 ImGui::DragFloat3("Rotation", &objects[selectedIndex].rotation.x, 0.1f);
                 ImGui::DragFloat3("Rotation / Tick", &objects[selectedIndex].rotationPerTick.x, 0.1f);
+                ImGui::DragFloat3("Position / Tick", &objects[selectedIndex].positionPerTick.x, 0.1f);
                 ImGui::DragFloat3("Scale", &objects[selectedIndex].scale.x, 0.1f);
             }
         } else {

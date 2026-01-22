@@ -253,9 +253,11 @@ void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matVi
     glBindVertexArray(0);
 }
 
-
-void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj) {
+void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
     glUseProgram(shaderProgram);
+    glFrontFace(frontFace);
+    glCullFace(cullMode);
+	
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 pos;

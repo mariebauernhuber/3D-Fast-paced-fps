@@ -6,14 +6,15 @@
 GLuint quadVAO, quadVBO;
 GLuint screenShaderProgram;
 
-const float quadVertices[] = {
-	-1.0f, 1.0f,	0.0f, 1.0f,
-	-1.0f, -1.0f,	0.0f, 0.0f,
-	1.0f, 1.0f, 	1.0f, 1.0f,
-
-	-1.0f, -1.0f,	0.0f, 0.0f, 
-	1.0f, -1.0f,	1.0f, 0.0f,
-	1.0f, 1.0f, 	1.0f, 1.0f
+const float quadVertices[24] = {  // 6 verts * 4 floats
+    // First triangle
+    -1.0f, -1.0f,  0.0f, 0.0f,  // Bottom-left
+     1.0f,  1.0f,  1.0f, 1.0f,  // Top-right
+    -1.0f,  1.0f,  0.0f, 1.0f,  // Top-left
+    // Second triangle
+    -1.0f, -1.0f,  0.0f, 0.0f,  // Bottom-left
+     1.0f, -1.0f,  1.0f, 0.0f,  // Bottom-right
+     1.0f,  1.0f,  1.0f, 1.0f   // Top-right
 };
 
 GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc) {
@@ -101,6 +102,7 @@ void SetupScreenQuad() {
 	uniform sampler2D screenTexture;
 
 	void main() {
+	//FragColor = vec4(TexCoord.x, TexCoord.y, 0.0, 1.0);
 	FragColor = texture(screenTexture, TexCoord);
 	}
 	)";
