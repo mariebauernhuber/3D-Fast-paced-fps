@@ -230,12 +230,16 @@ int main(int argc, char *argv[]) {
 
   gruvboxDark();
 
+  std::cout << "\nInit done!\n";
+
   if (argc > 1) {
     std::string_view arg = argv[1];
 
     if (arg == "--test" || arg == "-t") {
-      return RunUnitTests();
-    } else {
+      return main_tests_runner(1,nullptr);
+    }else if(arg == "--test-verbose" || arg == "-tv"){
+	return main_tests_runner_verbose(1, nullptr);
+    }else {
       std::cout << "\nUnknown argument: " << arg << "\n";
       return 1;
     }
@@ -244,7 +248,6 @@ int main(int argc, char *argv[]) {
   // glPolygonMode(GL_FRONT, GL_LINE);
   // glPolygonMode(GL_BACK, GL_FILL);
 
-  std::cout << "\nInit done!";
 
   is_running = true;
   SDL_Event event;
