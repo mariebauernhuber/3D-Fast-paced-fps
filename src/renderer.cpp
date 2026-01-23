@@ -13,7 +13,6 @@
 #include <cmath>
 #include <algorithm>
 #include "../include/mesh.hpp"
-#include "imgui.h"
 #include <SDL3/SDL.h>
 
 bool debugModeTogggled = false;
@@ -57,8 +56,11 @@ mat4x4 matWorld = Matrix_MakeIdentity();
 
 CullMode gCullMode = CullMode::Back;
 
+extern int targetWindowWidth, targetWindowHeight;
+
 void CalculateScreenTransforms(SDL_Window* window){
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+    SDL_GetWindowSize(window, &targetWindowWidth, &targetWindowHeight);
     fAspectRatio = (float)windowHeight / (float)windowWidth;
     fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159265358979323f);
 }
@@ -240,8 +242,6 @@ void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matVi
     GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
     GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-    mat4x4 matWorld = obj.GetWorldMatrix();
-
     //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
@@ -292,8 +292,6 @@ void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const 
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
     GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
     GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    mat4x4 matWorld = objects[ID].GetWorldMatrix();
 
     //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));

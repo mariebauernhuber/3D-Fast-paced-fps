@@ -1,6 +1,5 @@
 #pragma once
 #include "geometry.hpp"
-#include <vector>
 #include <SDL3/SDL.h>
 #include "mesh.hpp"
 

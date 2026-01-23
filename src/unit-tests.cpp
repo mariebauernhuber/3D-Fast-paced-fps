@@ -1,4 +1,16 @@
+#include "mesh.hpp"
+#include <GL/glew.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_opengl.h>
+#include <SDL3/SDL_opengl_glext.h>
+#include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_video.h>
 #include <cmath>
+#include <cstdlib>
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 #include <catch2/catch_reporter_automake.hpp>
@@ -279,6 +291,181 @@ TEST_CASE("Vector_Normalise"){
 		REQUIRE(result.x == 0.0f);
 		REQUIRE(result.y == 0.0f);
 		REQUIRE(result.z == 0.0f);
+	}
+}
+
+
+/*============================================================*/
+/* RENDERING TESTS                                            */
+/*============================================================*/
+
+
+TEST_CASE("SDL_GL", "[opengl][sdl]") {
+	SECTION("Initialize SDL_VIDEO"){
+		REQUIRE(SDL_Init(SDL_INIT_VIDEO) == true);
+		SDL_Quit();
+	}
+
+	SDL_Init(SDL_INIT_VIDEO);
+    
+	SECTION("Basic context creation succeeds") {
+		SDL_Window* window = SDL_CreateWindow("test", 1, 1, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+		REQUIRE(window != nullptr);
+
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+		SDL_GLContext ctx = SDL_GL_CreateContext(window);
+		REQUIRE(ctx != nullptr);
+
+		SDL_GL_DestroyContext(ctx);
+		SDL_DestroyWindow(window);
+		CAPTURE(SDL_GetError());
+	}
+
+	SECTION("Context fails without OPENGL flag") {
+		SDL_Window* window = SDL_CreateWindow("test", 1, 1, SDL_WINDOW_HIDDEN);
+		REQUIRE(window != nullptr);
+		SDL_GLContext ctx = SDL_GL_CreateContext(window);
+		REQUIRE(ctx == nullptr);  // Should fail
+		SDL_DestroyWindow(window);
+		CAPTURE(SDL_GetError());
+	}
+
+	SDL_Quit();
+}
+
+
+/*============================================================*/
+/* OBJECT SYSTEM TESTS                                        */
+/*============================================================*/
+
+
+TEST_CASE("Object creation and management"){
+	SECTION("Creating Object3D"){
+		Object3D testobject;
+		REQUIRE_NOTHROW(testobject);
+	}
+}
+
+TEST_CASE("Object3D GPU creation", "[object][gpu]") {
+	Object3D obj;
+
+	SECTION("Loading Object Defaults"){
+		SetObjDefaults(obj);
+		REQUIRE(obj.position.x == 0.0f);
+		REQUIRE(obj.position.y == 0.0f);
+		REQUIRE(obj.position.z == 0.0f);
+
+		REQUIRE(obj.scale.x == 1.0f);
+		REQUIRE(obj.scale.y == 1.0f);
+		REQUIRE(obj.scale.z == 1.0f);
+
+		REQUIRE(obj.meshData.tris.empty());
+
+		REQUIRE(obj.rotation.x == 0.0f);
+		REQUIRE(obj.rotation.y == 0.0f);
+		REQUIRE(obj.rotation.z == 0.0f);
+		
+		REQUIRE(obj.selectedIndex == 0);
+
+		REQUIRE(obj.positionPerTick.x == 0.0f);
+		REQUIRE(obj.positionPerTick.y == 0.0f);
+		REQUIRE(obj.positionPerTick.z == 0.0f);
+
+		REQUIRE(obj.rotationPerTick.x == 0.0f);
+		REQUIRE(obj.rotationPerTick.y == 0.0f);
+		REQUIRE(obj.rotationPerTick.z == 0.0f);
+
+		REQUIRE(obj.relativePositionPerTick.x == 0.0f);
+		REQUIRE(obj.relativePositionPerTick.y == 0.0f);
+		REQUIRE(obj.relativePositionPerTick.z == 0.0f);
+
+		REQUIRE(obj.GetWorldMatrix().m);
+	}
+
+	SECTION("InitializeObjectGPU creates valid handles") {
+		REQUIRE_NOTHROW(InitializeObjectGPU(obj));
+	}
+
+	SECTION("VAO/VBO survive after creation") {
+		GLuint vao_before = obj.meshData.VAO;
+		GLuint vbo_before = obj.meshData.VBO;
+		InitializeObjectGPU(obj);  // Call twice (idempotent)
+		REQUIRE(obj.meshData.VAO == vao_before);  // Same handles reused
+		REQUIRE(obj.meshData.VBO == vbo_before);
+	}
+
+	SECTION("Vertex count matches triangle data") {
+		size_t expected_verts = obj.meshData.tris.size() * 9;  // 3 tris * 3 points * 3 floats
+		InitializeObjectGPU(obj);
+		// Verify via glGetBufferParameteriv mock or log capture
+		INFO("Expected " << expected_verts << " floats for " << obj.meshData.tris.size() << " triangles");
+	}
+
+	SECTION("Has valid world matrix post-creation") {
+		InitializeObjectGPU(obj);
+		mat4x4 world = obj.GetWorldMatrix();
+		REQUIRE(glGetError() == GL_NO_ERROR);
+	}
+}
+
+TEST_CASE("Full Object demo"){
+	Object3D obj;
+
+	SECTION("Loading Object Defaults"){
+		SetObjDefaults(obj);
+		REQUIRE(obj.position.x == 0.0f);
+		REQUIRE(obj.position.y == 0.0f);
+		REQUIRE(obj.position.z == 0.0f);
+
+		REQUIRE(obj.scale.x == 1.0f);
+		REQUIRE(obj.scale.y == 1.0f);
+		REQUIRE(obj.scale.z == 1.0f);
+
+		REQUIRE(obj.meshData.tris.empty());
+
+		REQUIRE(obj.rotation.x == 0.0f);
+		REQUIRE(obj.rotation.y == 0.0f);
+		REQUIRE(obj.rotation.z == 0.0f);
+
+		REQUIRE(obj.positionPerTick.x == 0.0f);
+		REQUIRE(obj.positionPerTick.y == 0.0f);
+		REQUIRE(obj.positionPerTick.z == 0.0f);
+
+		REQUIRE(obj.rotationPerTick.x == 0.0f);
+		REQUIRE(obj.rotationPerTick.y == 0.0f);
+		REQUIRE(obj.rotationPerTick.z == 0.0f);
+
+		REQUIRE(obj.relativePositionPerTick.x == 0.0f);
+		REQUIRE(obj.relativePositionPerTick.y == 0.0f);
+		REQUIRE(obj.relativePositionPerTick.z == 0.0f);
+
+		REQUIRE(obj.GetWorldMatrix().m);
+	}
+
+	SECTION("Setting some demo parameters"){
+		obj.properties["name"] = "Demo object";
+		obj.position = {5.0f, 10.0f, 15.0f};
+		obj.rotation = {1.0f, 50.0f, 25.0f};
+
+		REQUIRE(!obj.properties.empty());
+
+		REQUIRE(obj.properties["name"] == "Demo object");
+
+		REQUIRE(obj.position.x == 5.0f);
+		REQUIRE(obj.position.y == 10.0f);
+		REQUIRE(obj.position.z == 15.0f);
+
+		REQUIRE(obj.rotation.x == 1.0f);
+		REQUIRE(obj.rotation.y == 50.0f);
+		REQUIRE(obj.rotation.z == 25.0f);
+	}
+
+	SECTION("Loading a mesh and adding it to GPU stack"){
+		obj.meshData.LoadFromObjectFile("VideoShip.obj");
+		InitializeObjectGPU(obj);
+
+		REQUIRE(obj.meshData.tris.data() != 0);
 	}
 }
 

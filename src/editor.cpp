@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 
 extern float deltaTime;
 extern float deltaTimeMod;
@@ -59,9 +58,7 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 	ImGui::DragFloat("DeltaTime Modifier", &deltaTimeMod);
 	ImGui::DragFloat("Target Framerate", &targetFrameRate);
 	ImGui::DragFloat("SecondsElapsed", (float*)&secondTiming);
-	ImGui::DragInt("Seconds", (int*)&secondsElapsedSinceStartup);
 	ImGui::DragFloat("frameRate", (float*)&realFrameRate);
-	ImGui::DragFloat3("shippos", &objects[0].position.x, 0.1f);
 
         if(selectedIndex != -1){
 		if (ImGui::CollapsingHeader("Object3D Editor")) {
@@ -79,8 +76,6 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 
         // Edit selected object
         if (selectedIndex >= 0 && selectedIndex < objects.size()) {
-            Object3D& object = objects[selectedIndex];
-            
             // Transform editing section
             if (ImGui::CollapsingHeader("Transform")) {
                 ImGui::DragFloat3("Position", &objects[selectedIndex].position.x, 0.1f);

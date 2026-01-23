@@ -12,6 +12,7 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_opengl_glext.h>
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
@@ -115,8 +116,6 @@ mesh CreateTestCubeCCW() {
     return testMesh;
 }
 
-extern int run_tests();
-
 int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -147,6 +146,27 @@ int main(int argc, char *argv[]) {
     std::cerr << "Failed to initialize GLEW" << std::endl;
     return -1;
   }
+
+float mouseX, mouseY;
+SDL_GetGlobalMouseState(&mouseX, &mouseY);
+std::cout << mouseX << mouseY;
+SDL_Point mousepos;
+mousepos.x = mouseX;
+mousepos.y = mouseY;
+// Get display index at mouse position  
+std::cout << mousepos.x << mousepos.y;
+int displayIndex = SDL_GetDisplayForPoint(&mousepos);
+
+if (displayIndex < 0) displayIndex = 1;  // Fallback to primary
+
+// Get display bounds
+SDL_Rect displayBounds;
+SDL_GetDisplayBounds(displayIndex, &displayBounds);
+
+// Resize/match window to display, then fullscreen
+SDL_SetWindowSize(window, displayBounds.w, displayBounds.h);
+SDL_SetWindowPosition(window, displayBounds.x, displayBounds.y);
+SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
 
   // 5. Global OpenGL State Setup
   glEnable(GL_DEPTH_TEST);
@@ -211,7 +231,7 @@ int main(int argc, char *argv[]) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0); // Back to default screen
 
   SetupScreenQuad();
-  SDL_SetWindowFullscreen(window, true);
+  //SDL_SetWindowFullscreen(window, true);
 
   CalculateScreenTransforms(window);
   CalculateScreenProjection();
