@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <catch2/catch.hpp>
+#include <assimp/Importer.hpp>
 
 extern bool debugModeTogggled;
 extern float deltaTime;
@@ -34,6 +35,9 @@ extern bool isImGuiGameViewportInMouseLock;
 bool shouldAllowMove = true;
 extern float secondsElapsedSinceStartup;
 extern float secondTiming;
+
+bool flight = false;
+bool grounded = false;
 
 std::vector<Object3D> objects;
 
@@ -56,6 +60,7 @@ extern unsigned long long nDrawCycles;
 
 extern vec3d vCamera;
 extern vec3d vLookDir;
+vec3d playerMovement;
 
 float fYaw = 0.0f;   // left/right
 float fPitch = 0.0f; // up/down
@@ -385,10 +390,12 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
         vCamera = Vector_Add(vCamera, Vector_Mul(vRight, fMoveSpeed));
 
       // Up / Down
-      if (key_states[SDL_SCANCODE_SPACE])
-        vCamera.y += 8.0f * deltaTime;
-      if (key_states[SDL_SCANCODE_LSHIFT])
-        vCamera.y -= 8.0f * deltaTime;
+      if(flight){
+	      if (key_states[SDL_SCANCODE_SPACE])
+		vCamera.y += 8.0f * deltaTime;
+	      if (key_states[SDL_SCANCODE_LSHIFT])
+		vCamera.y -= 8.0f * deltaTime;
+      }
     }
 
     // 4. Update camera orientation based on mouse look
@@ -397,6 +404,26 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
       vForward = {cosf(fPitch) * sinf(fYaw), sinf(fPitch),
                   cosf(fPitch) * cosf(fYaw)};
     }
+
+    if(vCamera.y < 0){
+	    playerMovement.y = 0;
+	    vCamera.y = 0;
+	grounded = true;
+    }else if(vCamera.y == 0){
+	    playerMovement.y = 0;
+	grounded = true;
+    }else{
+	    grounded = false;
+    }
+
+    if(!grounded){
+	    playerMovement.y = playerMovement.y - 0.5f * newDeltaTime;
+    }else if(grounded){
+	if(key_states[SDL_SCANCODE_SPACE]){
+		playerMovement.y = 0.5f;
+	}
+    }
+	    vCamera.y = vCamera.y + playerMovement.y;
 
     if (!shouldAllowMove) {
       if (SDL_GetWindowMouseGrab(window)) {

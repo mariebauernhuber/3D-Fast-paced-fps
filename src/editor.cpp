@@ -20,7 +20,7 @@ bool isImGuiGameViewportInFocus = false;
 bool isImGuiGameViewportInMouseLock = false;
 extern float secondsElapsedSinceStartup;
 extern float secondTiming;
-
+extern vec3d playerMovement;
 void DrawObjectEditor(std::vector<Object3D>& objects) {
         static int selectedIndex = -1;
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
@@ -91,6 +91,7 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 
 	if(ImGui::CollapsingHeader("Camera and Player Settings")){
 		ImGui::DragFloat3("Camera Pos", &vCamera.x, 0.1f);
+		ImGui::DragFloat3("Player Movement", &playerMovement.x, 0.1f);
 	}
 
 	ImGui::End();

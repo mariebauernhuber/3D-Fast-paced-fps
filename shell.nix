@@ -14,6 +14,7 @@ pkgs.mkShell {
 		imgui
 		catch2
 		cmake
+		assimp
 	];
 	shellHook = ''
   if [ -z "$LD_LIBRARY_PATH" ]; then
