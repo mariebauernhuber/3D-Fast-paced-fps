@@ -1,6 +1,8 @@
 #include "../include/mesh.hpp"
 #include "../include/geometry.hpp"
 
+extern std::vector<Object3D> objects;
+
 mat4x4 Object3D::GetWorldMatrix()  {
 
 	mat4x4 matRotX = Matrix_MakeRotationX(rotation.x);
@@ -15,7 +17,6 @@ mat4x4 Object3D::GetWorldMatrix()  {
 }
 
 void InitializeObjectGPU(Object3D &obj) {
-    // 1. Flatten the triangle vector into a simple float array
     std::vector<float> vertices;
     for (const auto& tri : obj.meshData.tris) {
         for (int i = 0; i < 3; i++) {
@@ -42,4 +43,14 @@ void InitializeObjectGPU(Object3D &obj) {
     // 5. Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+void SetObjDefaults(Object3D &obj){
+	obj.scale = {1.0f, 1.0f, 1.0f};
+	obj.position = {0.0f, 0.0f, 0.0f};
+	obj.rotationPerTick = {0.0f, 0.0f, 0.0f};
+	obj.positionPerTick = {0.0f, 0.0f, 0.0f};
+	obj.relativePositionPerTick = {0.0f, 0.0f, 0.0f};
+	obj.rotation = {0.0f, 0.0f, 0.0f};
+	obj.properties["name"] = "Unnamed Object";
 }

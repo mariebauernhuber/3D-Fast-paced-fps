@@ -1,0 +1,821 @@
+./build/app --test-verbose
+
+matProj made!
+fAspectRatio: 1.12317
+fNear: 0.1
+fFar: 1000
+windowHeight: 1076
+windowWidth: 958
+Init done!
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ is a Catch v2.13.10 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Vector_Add
+  Adding two nonzero vec3ds
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:25
+...............................................................................
+
+src/unit-tests.cpp:27: PASSED:
+  REQUIRE( result.x == 5.0f )
+with expansion:
+  5.0f == 5.0f
+
+src/unit-tests.cpp:28: PASSED:
+  REQUIRE( result.y == 7.0f )
+with expansion:
+  7.0f == 7.0f
+
+src/unit-tests.cpp:29: PASSED:
+  REQUIRE( result.z == 9.0f )
+with expansion:
+  9.0f == 9.0f
+
+-------------------------------------------------------------------------------
+Vector_Add
+  Adding a zero vec3d to a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:32
+...............................................................................
+
+src/unit-tests.cpp:34: PASSED:
+  REQUIRE( result.x == v1.x )
+with expansion:
+  1.0f == 1.0f
+
+src/unit-tests.cpp:35: PASSED:
+  REQUIRE( result.y == v1.y )
+with expansion:
+  2.0f == 2.0f
+
+src/unit-tests.cpp:36: PASSED:
+  REQUIRE( result.z == v1.z )
+with expansion:
+  3.0f == 3.0f
+
+-------------------------------------------------------------------------------
+Vector_Add
+  Adding a nonzero vec3d to a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:39
+...............................................................................
+
+src/unit-tests.cpp:41: PASSED:
+  REQUIRE( result.x == v1.x )
+with expansion:
+  1.0f == 1.0f
+
+src/unit-tests.cpp:42: PASSED:
+  REQUIRE( result.y == v1.y )
+with expansion:
+  2.0f == 2.0f
+
+src/unit-tests.cpp:43: PASSED:
+  REQUIRE( result.z == v1.z )
+with expansion:
+  3.0f == 3.0f
+
+-------------------------------------------------------------------------------
+Vector_Add
+  Adding a zero vec3d to a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:46
+...............................................................................
+
+src/unit-tests.cpp:48: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+src/unit-tests.cpp:49: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+src/unit-tests.cpp:50: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+-------------------------------------------------------------------------------
+Vector_Sub
+  Subtracting a nonzero vec3d from a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:59
+...............................................................................
+
+src/unit-tests.cpp:61: PASSED:
+  REQUIRE( result.x == -3.0f )
+with expansion:
+  -3.0f == -3.0f
+
+src/unit-tests.cpp:62: PASSED:
+  REQUIRE( result.y == -3.0f )
+with expansion:
+  -3.0f == -3.0f
+
+src/unit-tests.cpp:63: PASSED:
+  REQUIRE( result.z == -3.0f )
+with expansion:
+  -3.0f == -3.0f
+
+-------------------------------------------------------------------------------
+Vector_Sub
+  Subtracting a zero vec3d from a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:66
+...............................................................................
+
+src/unit-tests.cpp:68: PASSED:
+  REQUIRE( result.x == v1.x )
+with expansion:
+  1.0f == 1.0f
+
+src/unit-tests.cpp:69: PASSED:
+  REQUIRE( result.y == v1.y )
+with expansion:
+  2.0f == 2.0f
+
+src/unit-tests.cpp:70: PASSED:
+  REQUIRE( result.z == v1.z )
+with expansion:
+  3.0f == 3.0f
+
+-------------------------------------------------------------------------------
+Vector_Sub
+  Subtracting a nonzero vec3d from a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:73
+...............................................................................
+
+src/unit-tests.cpp:75: PASSED:
+  REQUIRE( result.x == -v1.x )
+with expansion:
+  -1.0f == -1.0f
+
+src/unit-tests.cpp:76: PASSED:
+  REQUIRE( result.y == -v1.y )
+with expansion:
+  -2.0f == -2.0f
+
+src/unit-tests.cpp:77: PASSED:
+  REQUIRE( result.z == -v1.z )
+with expansion:
+  -3.0f == -3.0f
+
+-------------------------------------------------------------------------------
+Vector_Sub
+  Subtracting a zero vec3d from a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:80
+...............................................................................
+
+src/unit-tests.cpp:82: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+src/unit-tests.cpp:83: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+src/unit-tests.cpp:84: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a nonzero vec3d with a nonzero positive float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:92
+...............................................................................
+
+src/unit-tests.cpp:95: PASSED:
+  REQUIRE( result.x == 5.0f )
+with expansion:
+  5.0f == 5.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 5
+
+src/unit-tests.cpp:96: PASSED:
+  REQUIRE( result.y == 10.0f )
+with expansion:
+  10.0f == 10.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 5
+
+src/unit-tests.cpp:97: PASSED:
+  REQUIRE( result.z == 15.0f )
+with expansion:
+  15.0f == 15.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 5
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a nonzero vec3d with a nonzero negative float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:100
+...............................................................................
+
+src/unit-tests.cpp:103: PASSED:
+  REQUIRE( result.x == -10.0f )
+with expansion:
+  -10.0f == -10.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -10
+
+src/unit-tests.cpp:104: PASSED:
+  REQUIRE( result.y == -20.0f )
+with expansion:
+  -20.0f == -20.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -10
+
+src/unit-tests.cpp:105: PASSED:
+  REQUIRE( result.z == -30.0f )
+with expansion:
+  -30.0f == -30.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -10
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a nonzero vec3d with zero
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:108
+...............................................................................
+
+src/unit-tests.cpp:111: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+
+src/unit-tests.cpp:112: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+
+src/unit-tests.cpp:113: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a zero vec3d with zero
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:116
+...............................................................................
+
+src/unit-tests.cpp:119: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+
+src/unit-tests.cpp:120: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+
+src/unit-tests.cpp:121: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a zero vec3d with a nonzero positive float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:124
+...............................................................................
+
+src/unit-tests.cpp:127: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 5
+
+src/unit-tests.cpp:128: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 5
+
+src/unit-tests.cpp:129: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 5
+
+-------------------------------------------------------------------------------
+Vector_Mul
+  Multiplying a zero vec3d with a nonzero negative float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:132
+...............................................................................
+
+src/unit-tests.cpp:135: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -10
+
+src/unit-tests.cpp:136: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -10
+
+src/unit-tests.cpp:137: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -10
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a nonzero vec3d by a nonzero positive float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:145
+...............................................................................
+
+src/unit-tests.cpp:148: PASSED:
+  REQUIRE_THAT( result.x, Catch::Matchers::WithinRel(0.333333f, 0.001f) )
+with expansion:
+  0.33333f and 0.333333 are within 0.1% of each other
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 3
+
+src/unit-tests.cpp:149: PASSED:
+  REQUIRE_THAT( result.y, Catch::Matchers::WithinRel(0.666666f, 0.001f) )
+with expansion:
+  0.66667f and 0.666666 are within 0.1% of each other
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 3
+
+src/unit-tests.cpp:150: PASSED:
+  REQUIRE( result.z == 1.0f )
+with expansion:
+  1.0f == 1.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = 3
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a nonzero vec3d by a nonzero negative float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:153
+...............................................................................
+
+src/unit-tests.cpp:156: PASSED:
+  REQUIRE_THAT( result.x, Catch::Matchers::WithinRel(-0.333333f, 0.001f) )
+with expansion:
+  -0.33333f and -0.333333 are within 0.1% of each other
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -3
+
+src/unit-tests.cpp:157: PASSED:
+  REQUIRE_THAT( result.y, Catch::Matchers::WithinRel(-0.666666f, 0.001f) )
+with expansion:
+  -0.66667f and -0.666666 are within 0.1% of each other
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -3
+
+src/unit-tests.cpp:158: PASSED:
+  REQUIRE( result.z == -1.0f )
+with expansion:
+  -1.0f == -1.0f
+with message:
+  vec3ds and floats used: {1, 2, 3} and float k = -3
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a nonzero vec3d by zero
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:161
+...............................................................................
+
+src/unit-tests.cpp:167: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+src/unit-tests.cpp:168: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+src/unit-tests.cpp:169: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {1, 2, 3} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a zero vec3d by a nonzero positive float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:172
+...............................................................................
+
+src/unit-tests.cpp:175: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 3
+
+src/unit-tests.cpp:176: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 3
+
+src/unit-tests.cpp:177: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = 3
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a zero vec3d by a nonzero negative float
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:180
+...............................................................................
+
+src/unit-tests.cpp:183: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -3
+
+src/unit-tests.cpp:184: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -3
+
+src/unit-tests.cpp:185: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  -0.0f == 0.0f
+with message:
+  vec3ds and floats used: {0, 0, 0} and float k = -3
+
+-------------------------------------------------------------------------------
+Vector_Div
+  Dividing a zero vec3d by zero (READ NOTE IN unit-tests.cpp!)
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:188
+...............................................................................
+
+src/unit-tests.cpp:194: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+src/unit-tests.cpp:195: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+src/unit-tests.cpp:196: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3ds and floats used: {0, 0, 0} and float k = 0
+  The Vector_Div function is supposed to safely handle division by zero by
+  returning zero
+
+-------------------------------------------------------------------------------
+Vector_CrossProduct
+  Getting the cross product of two nonzero vec3ds
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:205
+...............................................................................
+
+src/unit-tests.cpp:208: PASSED:
+  REQUIRE( result.x == -3.0f )
+with expansion:
+  -3.0f == -3.0f
+with message:
+  vec3ds used: {1, 2, 3} and {4, 5, 6}.
+
+src/unit-tests.cpp:209: PASSED:
+  REQUIRE( result.y == 6.0f )
+with expansion:
+  6.0f == 6.0f
+with message:
+  vec3ds used: {1, 2, 3} and {4, 5, 6}.
+
+src/unit-tests.cpp:210: PASSED:
+  REQUIRE( result.z == -3.0f )
+with expansion:
+  -3.0f == -3.0f
+with message:
+  vec3ds used: {1, 2, 3} and {4, 5, 6}.
+
+-------------------------------------------------------------------------------
+Vector_CrossProduct
+  Getting the cross product of a nonzero vec3d and a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:213
+...............................................................................
+
+src/unit-tests.cpp:216: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {1, 2, 3} and {0, 0, 0}.
+
+src/unit-tests.cpp:217: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {1, 2, 3} and {0, 0, 0}.
+
+src/unit-tests.cpp:218: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {1, 2, 3} and {0, 0, 0}.
+
+-------------------------------------------------------------------------------
+Vector_CrossProduct
+  Getting the cross product of a zero vec3d and a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:221
+...............................................................................
+
+src/unit-tests.cpp:224: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {0, 0, 0} and {4, 5, 6}.
+
+src/unit-tests.cpp:225: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {0, 0, 0} and {4, 5, 6}.
+
+src/unit-tests.cpp:226: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {0, 0, 0} and {4, 5, 6}.
+
+-------------------------------------------------------------------------------
+Vector_DotProduct
+  Getting the dot product of two nonzero vec3ds
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:235
+...............................................................................
+
+src/unit-tests.cpp:238: PASSED:
+  REQUIRE( result == 32.0f )
+with expansion:
+  32.0f == 32.0f
+with message:
+  vec3ds used: {1, 2, 3} and {4, 5, 6}.
+
+-------------------------------------------------------------------------------
+Vector_DotProduct
+  Getting the dot product of a nonzero vec3d and a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:241
+...............................................................................
+
+src/unit-tests.cpp:244: PASSED:
+  REQUIRE( result == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3ds used: {1, 2, 3} and {0, 0, 0}.
+
+-------------------------------------------------------------------------------
+Vector_Length
+  Getting the length of a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:253
+...............................................................................
+
+src/unit-tests.cpp:256: PASSED:
+  REQUIRE( result == std::sqrt(Vector_DotProduct(v1, v1)) )
+with expansion:
+  3.74166f == 3.74166f
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:257: PASSED:
+  REQUIRE( result == std::sqrt(14.0f) )
+with expansion:
+  3.74166f == 3.74166f
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:258: PASSED:
+  REQUIRE_THAT( result, Catch::Matchers::WithinRel(3.74f, 0.01f) )
+with expansion:
+  3.74166f and 3.74 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+-------------------------------------------------------------------------------
+Vector_Length
+  Getting the length of a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:261
+...............................................................................
+
+src/unit-tests.cpp:264: PASSED:
+  REQUIRE( result == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with message:
+  vec3d used: {0, 0, 0}.
+
+-------------------------------------------------------------------------------
+Vector_Normalise
+  Normalising a nonzero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:272
+...............................................................................
+
+src/unit-tests.cpp:275: PASSED:
+  REQUIRE_THAT( result.x, Catch::Matchers::WithinRel(v1.x / 3.74f, 0.01f) )
+with expansion:
+  0.26726f and 0.26738 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:276: PASSED:
+  REQUIRE_THAT( result.y, Catch::Matchers::WithinRel(v1.y / 3.74f, 0.01f) )
+with expansion:
+  0.53452f and 0.534759 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:277: PASSED:
+  REQUIRE_THAT( result.z, Catch::Matchers::WithinRel(v1.z / 3.74f, 0.01f) )
+with expansion:
+  0.80178f and 0.802139 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:279: PASSED:
+  REQUIRE_THAT( result.x, Catch::Matchers::WithinRel(0.2673f, 0.01f) )
+with expansion:
+  0.26726f and 0.2673 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:280: PASSED:
+  REQUIRE_THAT( result.y, Catch::Matchers::WithinRel(0.5354f, 0.01f) )
+with expansion:
+  0.53452f and 0.5354 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+src/unit-tests.cpp:281: PASSED:
+  REQUIRE_THAT( result.z, Catch::Matchers::WithinRel(0.8018f, 0.01f) )
+with expansion:
+  0.80178f and 0.8018 are within 1% of each other
+with message:
+  vec3d used: {1, 2, 3}.
+
+-------------------------------------------------------------------------------
+Vector_Normalise
+  Normalizing a zero vec3d
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:284
+...............................................................................
+
+src/unit-tests.cpp:288: PASSED:
+  REQUIRE( result.x == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3d used: {0, 0, 0}.
+  Pretty sure this also devides by zero.
+
+src/unit-tests.cpp:289: PASSED:
+  REQUIRE( result.y == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3d used: {0, 0, 0}.
+  Pretty sure this also devides by zero.
+
+src/unit-tests.cpp:290: PASSED:
+  REQUIRE( result.z == 0.0f )
+with expansion:
+  0.0f == 0.0f
+with messages:
+  vec3d used: {0, 0, 0}.
+  Pretty sure this also devides by zero.
+
+-------------------------------------------------------------------------------
+SDL_GL
+  Initialize SDL_VIDEO
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:308
+...............................................................................
+
+src/unit-tests.cpp:309: PASSED:
+  REQUIRE( SDL_Init(0x00000020u) == true )
+with expansion:
+  true == true
+
+-------------------------------------------------------------------------------
+SDL_GL
+  Basic context creation succeeds
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:315
+...............................................................................
+
+src/unit-tests.cpp:317: PASSED:
+  REQUIRE( window != nullptr )
+with expansion:
+  0x00005595c22a69a0 != nullptr
+
+src/unit-tests.cpp:322: PASSED:
+  REQUIRE( ctx != nullptr )
+with expansion:
+  0x00005595c2ae7090 != nullptr
+
+-------------------------------------------------------------------------------
+SDL_GL
+  Context fails without OPENGL flag
+-------------------------------------------------------------------------------
+src/unit-tests.cpp:328
+...............................................................................
+
+src/unit-tests.cpp:330: PASSED:
+  REQUIRE( window != nullptr )
+with expansion:
+  0x00005595c2ad0100 != nullptr
+
+src/unit-tests.cpp:332: PASSED:
+  REQUIRE( ctx == nullptr )
+with expansion:
+  nullptr == nullptr
+
+===============================================================================
+All tests passed (89 assertions in 10 test cases)
+

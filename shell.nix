@@ -12,6 +12,8 @@ pkgs.mkShell {
 		clang-tools
 		bear
 		imgui
+		catch2
+		cmake
 	];
 	shellHook = ''
   if [ -z "$LD_LIBRARY_PATH" ]; then

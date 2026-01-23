@@ -2,13 +2,17 @@
 #include "../include/frustumCulling.hpp"
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/trigonometric.hpp>
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include "../include/mesh.hpp"
-#include "imgui.h"
 #include <SDL3/SDL.h>
 
 bool debugModeTogggled = false;
@@ -16,6 +20,7 @@ extern unsigned long long nObjRenderCycles;
 extern unsigned long long nTrisPushedBack;
 unsigned long long nDrawCycles = 0;
 
+extern std::vector<Object3D> objects;
 
 extern int windowWidth, windowHeight;
 float fTheta;
@@ -27,6 +32,7 @@ float fAspectRatio;
 float deltaTime;
 float deltaTimeMod = 1;
 float newDeltaTime;
+float secondTiming = 0;
 
 float targetFrameRate = 60;
 float realFrameRate;
@@ -35,12 +41,10 @@ vec3d vCamera = { 0.0f, 0.0f, 0.0f };
 vec3d vLookDir;
 
 unsigned long long framesElapsedSinceStartup;
-unsigned long long secondsElapsedSinceStartup;
+float secondsElapsedSinceStartup;
 float minutesElapsedSinceStartup;
 float hoursElapsedSinceStartup;
 float daysElapsedSinceStartup;
-
-std::vector<Object3D> objects;
 
 mat4x4 matView, matProj;
 
@@ -52,8 +56,11 @@ mat4x4 matWorld = Matrix_MakeIdentity();
 
 CullMode gCullMode = CullMode::Back;
 
+extern int targetWindowWidth, targetWindowHeight;
+
 void CalculateScreenTransforms(SDL_Window* window){
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+    SDL_GetWindowSize(window, &targetWindowWidth, &targetWindowHeight);
     fAspectRatio = (float)windowHeight / (float)windowWidth;
     fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159265358979323f);
 }
@@ -75,6 +82,12 @@ void CalculateDeltaTime(){
     Uint64 currentCounter = SDL_GetPerformanceCounter();
     Uint64 frequency = SDL_GetPerformanceFrequency();
 
+    secondTiming = SDL_GetTicks() / 1000.0f;
+    if(secondTiming > 1000.0f){
+	    secondTiming = 0.0f;
+    }
+
+
     deltaTime = 0.0f;
 
     if (lastCounter != 0)
@@ -95,7 +108,7 @@ void MinuteTimer(){
     if(framesElapsedSinceStartup == targetFrameRate){
         secondsElapsedSinceStartup++;
         framesElapsedSinceStartup = 0;
-        
+
         minutesElapsedSinceStartup = secondsElapsedSinceStartup / 60.0f;
         hoursElapsedSinceStartup = minutesElapsedSinceStartup / 60.0f;
         daysElapsedSinceStartup = hoursElapsedSinceStartup / 24.0f;
@@ -143,7 +156,7 @@ void DrawLine(float x1, float y1, float x2, float y2){
 	glEnd();
 }
 
-void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
+void RenderObjectCPU(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
     std::vector<triangle> vecTrianglesToRaster;
 
     mat4x4 matWorld = obj.GetWorldMatrix();
@@ -216,14 +229,72 @@ void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
 void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj) {
     glUseProgram(shaderProgram);
 
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::vec3 pos;
+    pos[0] = obj.position.x;
+    pos[1] = obj.position.y;
+    pos[2] = obj.position.z;
+
+    model = glm::translate(model, pos);
+
     // 1. Pass transformation matrices as uniforms
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
     GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
     GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-    mat4x4 matWorld = obj.GetWorldMatrix();
+    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
 
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
+    // 2. Bind and Draw
+    glBindVertexArray(obj.meshData.VAO); 
+    glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
+    glBindVertexArray(0);
+}
+
+void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
+    glUseProgram(shaderProgram);
+    glFrontFace(frontFace);
+    glCullFace(cullMode);
+	
+
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::vec3 pos;
+    pos[0] = objects[ID].position.x;
+    pos[1] = objects[ID].position.y;
+    pos[2] = objects[ID].position.z;
+
+    if(objects[ID].rotation.x == 360.0f){
+	    objects[ID].rotation.x = 0.0f;
+    }else if(objects[ID].rotation.x > 360.0f){
+	    objects[ID].rotation.x = 0.0f + (objects[ID].rotation.x - 360.0f);
+    }
+
+    if(objects[ID].rotation.y == 360.0f){
+	    objects[ID].rotation.y = 0.0f;
+    }else if(objects[ID].rotation.y > 360.0f){
+	    objects[ID].rotation.y = 0.0f + (objects[ID].rotation.y - 360.0f);
+    }
+
+    if(objects[ID].rotation.z == 360.0f){
+	    objects[ID].rotation.z = 0.0f;
+    }else if(objects[ID].rotation.z > 360.0f){
+	    objects[ID].rotation.z = 0.0f + (objects[ID].rotation.z - 360.0f);
+    }
+
+    model = glm::translate(model, pos);
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.x), {1.0f * newDeltaTime, 0.0f, 0.0f});
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.y), {0.0f, 1.0f * newDeltaTime, 0.0f});
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.z), {0.0f, 0.0f, 1.0f * newDeltaTime});
+
+    // 1. Pass transformation matrices as uniforms
+    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
+    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+
+    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
 
