@@ -1,3 +1,0 @@
-/home/nils/Docs/mistake/_deps/catch2-subbuild/CMakeFiles/catch2-populate.dir
-/home/nils/Docs/mistake/_deps/catch2-subbuild/CMakeFiles/edit_cache.dir
-/home/nils/Docs/mistake/_deps/catch2-subbuild/CMakeFiles/rebuild_cache.dir

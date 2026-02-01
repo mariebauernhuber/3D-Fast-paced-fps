@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/nils/Docs/mistake/cmake_install.cmake",
-		"/home/nils/Docs/mistake/_deps/catch2-build/cmake_install.cmake",
-		"/home/nils/Docs/mistake/_deps/catch2-build/src/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
