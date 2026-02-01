@@ -2,7 +2,7 @@ CC := g++
 
 # Use pkg-config to get exact Nix store paths for the LSP
 SDL_CFLAGS := $(shell pkg-config --cflags sdl3 sdl3-ttf)
-SDL_LIBS   := $(shell pkg-config --libs sdl3 sdl3-ttf)
+SDL_LIBS   := $(shell pkg-config --libs sdl3 sdl3-ttf sdl3-image)
 
 ARGS =
 
@@ -13,7 +13,7 @@ IMGUI_BACKENDS := $(IMGUI_DIR)/backends
 
 CPPFLAGS := -Wall -Wextra -g -Iinclude $(SDL_CFLAGS)
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS)
-LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW -lglfw
+LDFLAGS  := $(SDL_LIBS) -lm -lGL -lGLEW -lglfw -lassimp
 
 SRC_DIR   := src
 TEST_SRC_DIR := tests

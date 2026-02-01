@@ -1,4 +1,5 @@
 #include "mesh.hpp"
+#include "renderer.hpp"
 #include <GL/glew.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
@@ -462,12 +463,14 @@ TEST_CASE("Full Object demo"){
 	}
 
 	SECTION("Loading a mesh and adding it to GPU stack"){
-		obj.meshData.LoadFromObjectFile("VideoShip.obj");
+		obj.meshData.LoadFromAssimp("src/VideoShip.obj");
 		InitializeObjectGPU(obj);
 
-		REQUIRE(obj.meshData.tris.data() != 0);
+		REQUIRE(obj.meshData.tris.data() != nullptr);
 	}
 }
+
+
 
 int main_tests_runner(int argc, char* argv[]){
 	Catch::Session session;

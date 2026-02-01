@@ -22,3 +22,8 @@ void DrawLine(float x1, float y1, float x2, float y2);
 void RenderObject(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj);
 void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj);
 void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode);
+void InitDefaultTexture();
+void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj);
+GLuint LoadTextureFromFile(const char* filename);
+void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode);
+void DebugTransform(Object3D& obj);

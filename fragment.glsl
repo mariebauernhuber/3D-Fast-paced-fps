@@ -1,7 +1,14 @@
 #version 330 core
-out vec4 FragColor; // The output variable for pixel color
+in vec2 vTexCoord;
+out vec4 FragColor;
+uniform sampler2D uTexture;
+uniform int uUseTexture = 1;  // 1=use texture, 0=use color
 
 void main() {
-    // RGBA format (Red, Green, Blue, Alpha)
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); 
-};
+    vec4 texColor = texture(uTexture, vTexCoord);
+    if(uUseTexture == 0){
+	    FragColor = vec4(0.8f, 0.8f, 0.8f, 1.0f);
+    }else{
+	FragColor = texColor;
+    }
+}

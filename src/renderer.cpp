@@ -303,3 +303,128 @@ void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const 
     glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
     glBindVertexArray(0);
 }
+
+glm::mat4 ToGLM(const mat4x4& yourMat) {
+    // GLM is column-major, so transpose your row-major data
+    return glm::mat4(
+        yourMat.m[0][0], yourMat.m[1][0], yourMat.m[2][0], yourMat.m[3][0],  // col 0
+        yourMat.m[0][1], yourMat.m[1][1], yourMat.m[2][1], yourMat.m[3][1],  // col 1  
+        yourMat.m[0][2], yourMat.m[1][2], yourMat.m[2][2], yourMat.m[3][2],  // col 2
+        yourMat.m[0][3], yourMat.m[1][3], yourMat.m[2][3], yourMat.m[3][3]   // col 3
+    );
+}
+
+GLuint whiteTexture = 0;  // global/init once
+
+void InitDefaultTexture() {
+    if (whiteTexture) return;
+    
+    unsigned char white[] = {255, 255, 255, 255};  // 1x1 RGBA white
+    glGenTextures(1, &whiteTexture);
+    glBindTexture(GL_TEXTURE_2D, whiteTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
+    glUseProgram(shader);
+    glFrontFace(frontFace);
+    glCullFace(cullMode);
+    // Use provided texture OR fallback
+    GLuint texID = texture ? texture : whiteTexture;
+    
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::vec3 pos;
+    pos[0] = objects[ID].position.x;
+    pos[1] = objects[ID].position.y;
+    pos[2] = objects[ID].position.z;
+
+    if(objects[ID].rotation.x == 360.0f){
+	    objects[ID].rotation.x = 0.0f;
+    }else if(objects[ID].rotation.x > 360.0f){
+	    objects[ID].rotation.x = 0.0f + (objects[ID].rotation.x - 360.0f);
+    }
+
+    if(objects[ID].rotation.y == 360.0f){
+	    objects[ID].rotation.y = 0.0f;
+    }else if(objects[ID].rotation.y > 360.0f){
+	    objects[ID].rotation.y = 0.0f + (objects[ID].rotation.y - 360.0f);
+    }
+
+    if(objects[ID].rotation.z == 360.0f){
+	    objects[ID].rotation.z = 0.0f;
+    }else if(objects[ID].rotation.z > 360.0f){
+	    objects[ID].rotation.z = 0.0f + (objects[ID].rotation.z - 360.0f);
+    }
+
+    model = glm::translate(model, pos);
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.x), {1.0f * newDeltaTime, 0.0f, 0.0f});
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.y), {0.0f, 1.0f * newDeltaTime, 0.0f});
+    model = glm::rotate(model, glm::radians(objects[ID].rotation.z), {0.0f, 0.0f, 1.0f * newDeltaTime});
+
+    // 1. Pass transformation matrices as uniforms
+    GLint modelLoc = glGetUniformLocation(shader, "model");
+    GLint viewLoc = glGetUniformLocation(shader, "view");
+    GLint projLoc = glGetUniformLocation(shader, "projection");
+
+    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
+
+    glm::mat4 modelGLM = model;
+    glm::mat4 viewGLM = ToGLM(matView);  
+    glm::mat4 projGLM = ToGLM(matProj);
+    glm::mat4 mvpGLM = projGLM * viewGLM * modelGLM;
+    
+    glUseProgram(shader);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "uMVP"), 1, GL_FALSE, glm::value_ptr(mvpGLM));
+    glUniform1i(glGetUniformLocation(shader, "uTexture"), 0);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    glBindVertexArray(obj.meshData.VAO);
+    glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
+}
+
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+#include <GL/glew.h>
+
+GLuint LoadTextureFromFile(const char* filename) {
+    SDL_Surface* surface = IMG_Load(filename);
+    if (!surface) {
+        SDL_Log("IMG_Load failed for %s: %s", filename, SDL_GetError());
+        return 0;
+    }
+
+    GLuint tex = 0;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    // SDL3: format is an enum, use SDL_BYTESPERPIXEL
+    GLenum format = (SDL_BYTESPERPIXEL(surface->format) == 4) ? GL_RGBA : GL_RGB;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format,
+                 surface->w, surface->h, 0,
+                 format, GL_UNSIGNED_BYTE, surface->pixels);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    SDL_DestroySurface(surface);
+    return tex;
+}
+
+void DebugTransform(Object3D& obj) {
+    auto world = obj.GetWorldMatrix();
+    printf("Obj@(%f,%f,%f) World[3]=(%f,%f,%f)\n", 
+           obj.position.x, obj.position.y, obj.position.z,
+           world.m[0][3], world.m[1][3], world.m[2][3]);
+    
+    glm::mat4 glmWorld = ToGLM(world);
+    printf("GLM World[3]=(%f,%f,%f)\n", 
+           glmWorld[3][0], glmWorld[3][1], glmWorld[3][2]);
+}

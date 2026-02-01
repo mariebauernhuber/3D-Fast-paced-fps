@@ -18,29 +18,36 @@ mat4x4 Object3D::GetWorldMatrix()  {
 
 void InitializeObjectGPU(Object3D &obj) {
     std::vector<float> vertices;
+    vertices.reserve(obj.meshData.tris.size() * 15);  // 3pos×3 + 2uv×3 = 15 floats/tri
+
     for (const auto& tri : obj.meshData.tris) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; ++i) {
+            // Position (existing)
             vertices.push_back(tri.p[i].x);
             vertices.push_back(tri.p[i].y);
             vertices.push_back(tri.p[i].z);
+            
+            // NEW: UVs
+            vertices.push_back(tri.t[i].x);
+            vertices.push_back(tri.t[i].y);
         }
     }
 
-    // 2. Generate and bind buffers
     glGenVertexArrays(1, &obj.meshData.VAO);
     glGenBuffers(1, &obj.meshData.VBO);
-
     glBindVertexArray(obj.meshData.VAO);
 
-    // 3. Upload data
     glBindBuffer(GL_ARRAY_BUFFER, obj.meshData.VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
-    // 4. Set vertex attributes (index 0 corresponds to 'aPos' in your shader)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // Position attrib 0: 3 floats, stride=5 floats (pos+uv), offset=0
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // 5. Unbind
+    // NEW: Texcoord attrib 1: 2 floats, stride=5 floats, offset=3 floats (after pos)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }

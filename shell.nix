@@ -7,6 +7,7 @@ pkgs.mkShell {
 		pkg-config
 		sdl3
 		sdl3-ttf
+		sdl3-image
 		glew
 		glm
 		clang-tools
