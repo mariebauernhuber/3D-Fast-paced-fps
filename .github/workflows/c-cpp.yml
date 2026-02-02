@@ -1,23 +1,68 @@
-name: C/C++ CI
+name: Build C++ Project
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          build-essential \
+          pkg-config \
+          libsdl3-dev \
+          libglfw3-dev \
+          libglew-dev \
+          libassimp-dev \
+          libgl1-mesa-dev \
+          libglm-dev
+    
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install sdl3 glfw glew assimp pkg-config
+    
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-pkg-config
+          mingw-w64-x86_64-SDL3
+          mingw-w64-x86_64-glfw
+          mingw-w64-x86_64-glew
+          mingw-w64-x86_64-assimp
+    
+    - name: Build project
+      run: |
+        make clean
+        make -j$(nproc || echo 2)
+    
+    - name: Run tests
+      run: |
+        make test || ./build/test
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-${{ matrix.os }}
+        path: build/app.exe
+        # Use build/app on Linux/macOS
+        if-no-files-found: ignore
