@@ -10,6 +10,7 @@ struct mesh{
 	GLuint VBO, VAO;
 	bool LoadFromObjectFile(const std::string& filename);
 	bool LoadFromObjectFileNew(const std::string& filename);
+	bool LoadFromAssimp(const std::string& filename);
 
 };
 

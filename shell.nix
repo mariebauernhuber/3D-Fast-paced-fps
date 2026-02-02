@@ -7,6 +7,7 @@ pkgs.mkShell {
 		pkg-config
 		sdl3
 		sdl3-ttf
+		sdl3-image
 		glew
 		glm
 		clang-tools
@@ -14,6 +15,7 @@ pkgs.mkShell {
 		imgui
 		catch2
 		cmake
+		assimp
 	];
 	shellHook = ''
   if [ -z "$LD_LIBRARY_PATH" ]; then

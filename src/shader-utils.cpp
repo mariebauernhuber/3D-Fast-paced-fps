@@ -30,7 +30,7 @@ GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc) {
 	glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &len);
 	std::string log(len, ' ');
 	glGetShaderInfoLog(vertexShader, len, nullptr, log.data());
-	std::cerr << "vertexShader compile error: " << log << "\n";
+	std::cerr << "vertexShader " << vertexSrc << " compile error: " << log << "\n";
     }
     
     // 2. Compile Fragment Shader

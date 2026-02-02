@@ -67,12 +67,6 @@ void CalculateScreenTransforms(SDL_Window* window){
 
 void CalculateScreenProjection(){
     matProj = Matrix_MakeProjection(90.0f, fAspectRatio, fNear, fFar);
-    std::cout << "\nmatProj made!";
-    std::cout << "\nfAspectRatio: " << fAspectRatio;
-    std::cout << "\nfNear: " << fNear;
-    std::cout << "\nfFar: " << fFar;
-    std::cout << "\nwindowHeight: " << (float)windowHeight;
-    std::cout << "\nwindowWidth: " << (float)windowWidth;
 }
 
 
@@ -86,7 +80,6 @@ void CalculateDeltaTime(){
     if(secondTiming > 1000.0f){
 	    secondTiming = 0.0f;
     }
-
 
     deltaTime = 0.0f;
 
@@ -117,29 +110,6 @@ void MinuteTimer(){
     }
 }
 
-void PrintDebugInfo(){
-    if(debugModeTogggled) {
-    std::cout << "Targets: \n" << "deltaTime: " << (1 / targetFrameRate) << "\n" << "frameRate: " << targetFrameRate << "\n";
-
-    std::cout << "Real measurements: \n" << "frameRate: " << realFrameRate << "\n" << "deltaTime: " << deltaTime << "\n";
-
-    std::cout << "Timing functions: \n" << "frameProgressToSecondTimer: " << framesElapsedSinceStartup << "\n";
-    std::cout << "secondsElapsedSinceStartup: " << secondsElapsedSinceStartup << "\n";
-    std::cout << "minutesElapsedSinceStartup: " << minutesElapsedSinceStartup << "\n";
-    std::cout << "hoursElapsedSinceStartup: " << hoursElapsedSinceStartup << "\n";
-    std::cout << "daysElapsedSinceStartup: " << daysElapsedSinceStartup << "\n\n";
-
-    std::cout << "Draw Cycles completed: " << nDrawCycles << "\n";
-    std::cout << "OBJ render cycles completed: " << nObjRenderCycles <<"\n";
-    std::cout << "TrisPushBacks: " << nTrisPushedBack << "\n\n";
-    std::cout << "fAspectRatio: " << fAspectRatio << "\n";
-
-    std::cout << "Camera Position:\n X: " << vCamera.x << "\n" << " Y: " << vCamera.y << "\n";
-    std::cout << "\033[2J\033[1;1H"; //ANSI CODES to clear console screen
-    
-    }
-}
-
 vec2d ProjectToScreen(const vec3d &v) {
     // v.x and v.y are in range [-1, 1] after the perspective divide
     return {
@@ -148,117 +118,36 @@ vec2d ProjectToScreen(const vec3d &v) {
     };
 }
 
-void DrawLine(float x1, float y1, float x2, float y2){
-	glBegin(GL_LINES);
-	glColor3f(1.0f, 0.0f, 1.0f); // red, green, blue values
-	glVertex2f(x1, y1);
-	glVertex2f(x2, y2);
-	glEnd();
+glm::mat4 ToGLM(const mat4x4& yourMat) {
+    // GLM is column-major, so transpose your row-major data
+    return glm::mat4(
+        yourMat.m[0][0], yourMat.m[1][0], yourMat.m[2][0], yourMat.m[3][0],  // col 0
+        yourMat.m[0][1], yourMat.m[1][1], yourMat.m[2][1], yourMat.m[3][1],  // col 1  
+        yourMat.m[0][2], yourMat.m[1][2], yourMat.m[2][2], yourMat.m[3][2],  // col 2
+        yourMat.m[0][3], yourMat.m[1][3], yourMat.m[2][3], yourMat.m[3][3]   // col 3
+    );
 }
 
-void RenderObjectCPU(Object3D &obj, const mat4x4 &matView, const mat4x4 &matProj) {
-    std::vector<triangle> vecTrianglesToRaster;
+GLuint whiteTexture = 0;  // global/init once
 
-    mat4x4 matWorld = obj.GetWorldMatrix();
-
-    for(const auto &tri : obj.meshData.tris) {
-        triangle triTransformed, triViewed;
-
-        // 1. Transform to world space
-        triTransformed.p[0] = Matrix_MultiplyVector(matWorld, tri.p[0]);
-        triTransformed.p[1] = Matrix_MultiplyVector(matWorld, tri.p[1]);
-        triTransformed.p[2] = Matrix_MultiplyVector(matWorld, tri.p[2]);
-
-        // 2. Transform to view space
-        triViewed.p[0] = Matrix_MultiplyVector(matView, triTransformed.p[0]);
-        triViewed.p[1] = Matrix_MultiplyVector(matView, triTransformed.p[1]);
-        triViewed.p[2] = Matrix_MultiplyVector(matView, triTransformed.p[2]);
-
-        // 3. Backface culling
-        vec3d normal = Vector_CrossProduct(
-            Vector_Sub(triViewed.p[1], triViewed.p[0]),
-            Vector_Sub(triViewed.p[2], triViewed.p[0])
-        );
-        normal = Vector_Normalise(normal);
-
-        if(gCullMode == CullMode::Back && Vector_DotProduct(normal, triViewed.p[0]) >= 0.0f) continue;
-        if(gCullMode == CullMode::Front && Vector_DotProduct(normal, triViewed.p[0]) < 0.0f) continue;
-
-        // 4. Clip triangle against frustum planes
-        auto clippedTris = ClipTriangleToFrustumOptimized(triViewed);
-	
-
-        // 5. Project and add to raster list
-        for(auto &triProj : clippedTris) {
-            triangle triProjected;
-            triProjected.p[0] = Matrix_MultiplyVector(matProj, triProj.p[0]);
-            triProjected.p[1] = Matrix_MultiplyVector(matProj, triProj.p[1]);
-            triProjected.p[2] = Matrix_MultiplyVector(matProj, triProj.p[2]);
-
-            // Perspective divide
-            for(int i=0; i<3; i++){
-                triProjected.p[i].x /= triProjected.p[i].w;
-                triProjected.p[i].y /= triProjected.p[i].w;
-                triProjected.p[i].z /= triProjected.p[i].w;
-            }
-		
-            vecTrianglesToRaster.push_back(triProjected);
-        }
-    }
-	
-    // 6. Depth sort
-    std::sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](const triangle &t1, const triangle &t2){
-        float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
-        float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
-        return z1 > z2;
-    }); 
-
-    // 7. Rasterize
-    for(const auto &t : vecTrianglesToRaster){
-        vec2d p0 = ProjectToScreen(t.p[0]);
-        vec2d p1 = ProjectToScreen(t.p[1]);
-        vec2d p2 = ProjectToScreen(t.p[2]);
-	
-	DrawLine(p0.x, p0.y, p1.x, p1.y);
-	DrawLine(p1.x, p1.y, p2.x, p2.y);
-	DrawLine(p2.x, p2.y, p0.x, p0.y);
-    }
-
+void InitDefaultTexture() {
+    if (whiteTexture) return;
+    
+    unsigned char white[] = {255, 255, 255, 255};  // 1x1 RGBA white
+    glGenTextures(1, &whiteTexture);
+    glBindTexture(GL_TEXTURE_2D, whiteTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void RenderObjectModern(Object3D &obj, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj) {
-    glUseProgram(shaderProgram);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::vec3 pos;
-    pos[0] = obj.position.x;
-    pos[1] = obj.position.y;
-    pos[2] = obj.position.z;
-
-    model = glm::translate(model, pos);
-
-    // 1. Pass transformation matrices as uniforms
-    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
-
-    // 2. Bind and Draw
-    glBindVertexArray(obj.meshData.VAO); 
-    glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
-    glBindVertexArray(0);
-}
-
-void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
-    glUseProgram(shaderProgram);
+void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
+    glUseProgram(shader);
     glFrontFace(frontFace);
     glCullFace(cullMode);
-	
-
+    // Use provided texture OR fallback
+    GLuint texID = texture ? texture : whiteTexture;
+    
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 pos;
     pos[0] = objects[ID].position.x;
@@ -289,17 +178,69 @@ void RenderObjectModernViaID(Object3D &obj, int ID, GLuint shaderProgram, const 
     model = glm::rotate(model, glm::radians(objects[ID].rotation.z), {0.0f, 0.0f, 1.0f * newDeltaTime});
 
     // 1. Pass transformation matrices as uniforms
-    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+    GLint modelLoc = glGetUniformLocation(shader, "model");
+    GLint viewLoc = glGetUniformLocation(shader, "view");
+    GLint projLoc = glGetUniformLocation(shader, "projection");
 
     //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &matWorld.m[0][0]);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &matView.m[0][0]);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &matProj.m[0][0]);
 
-    // 2. Bind and Draw
-    glBindVertexArray(obj.meshData.VAO); 
+    glm::mat4 modelGLM = model;
+    glm::mat4 viewGLM = ToGLM(matView);  
+    glm::mat4 projGLM = ToGLM(matProj);
+    glm::mat4 mvpGLM = projGLM * viewGLM * modelGLM;
+    
+    glUseProgram(shader);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "uMVP"), 1, GL_FALSE, glm::value_ptr(mvpGLM));
+    glUniform1i(glGetUniformLocation(shader, "uTexture"), 0);
+    
+    glBindVertexArray(obj.meshData.VAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID);
     glDrawArrays(GL_TRIANGLES, 0, obj.meshData.tris.size() * 3);
-    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+#include <GL/glew.h>
+#include "stb_image.h"
+
+GLuint LoadTextureFromFile(const char* filename) {
+    int width, height, channels;
+    unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
+    if (!data) {
+        SDL_Log("stb_image failed for %s", filename);
+        return 0;
+    }
+
+    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+
+    GLuint tex = 0;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format,
+                 width, height, 0, format,
+                 GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+    return tex;
+}
+
+void DebugTransform(Object3D& obj) {
+    auto world = obj.GetWorldMatrix();
+    printf("Obj@(%f,%f,%f) World[3]=(%f,%f,%f)\n", 
+           obj.position.x, obj.position.y, obj.position.z,
+           world.m[0][3], world.m[1][3], world.m[2][3]);
+    
+    glm::mat4 glmWorld = ToGLM(world);
+    printf("GLM World[3]=(%f,%f,%f)\n", 
+           glmWorld[3][0], glmWorld[3][1], glmWorld[3][2]);
 }

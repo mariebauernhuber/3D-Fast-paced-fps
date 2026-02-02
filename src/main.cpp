@@ -23,6 +23,9 @@
 #include <map>
 #include <vector>
 #include <catch2/catch.hpp>
+#include <assimp/Importer.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 extern bool debugModeTogggled;
 extern float deltaTime;
@@ -34,6 +37,11 @@ extern bool isImGuiGameViewportInMouseLock;
 bool shouldAllowMove = true;
 extern float secondsElapsedSinceStartup;
 extern float secondTiming;
+bool wireFrameMode = false;
+bool cullingEnabled = true;
+
+bool flight = false;
+bool grounded = false;
 
 std::vector<Object3D> objects;
 
@@ -56,6 +64,7 @@ extern unsigned long long nDrawCycles;
 
 extern vec3d vCamera;
 extern vec3d vLookDir;
+vec3d playerMovement;
 
 float fYaw = 0.0f;   // left/right
 float fPitch = 0.0f; // up/down
@@ -65,6 +74,7 @@ float fMouseSensitivity = 0.0025f;
 GLuint fbo, textureColorBuffer, rbo;
 
 GLuint mainShaderProgram;
+GLuint cullingTestShader;
 GLuint colorCycleShader;
 
 int targetWindowWidth, targetWindowHeight;
@@ -72,51 +82,10 @@ int targetWindowWidth, targetWindowHeight;
 extern GLuint quadVAO, quadVBO;
 extern GLuint screenShaderProgram;
 
-mesh CreateTestCubeCCW() {
-    mesh testMesh;
-    testMesh.tris.clear();
-    
-    // 8 cube vertices (unit cube centered at origin)
-    std::vector<vec3d> verts = {
-        {-0.5, -0.5,  0.5},  // 0 front-bottom-left
-        { 0.5, -0.5,  0.5},  // 1 front-bottom-right
-        { 0.5,  0.5,  0.5},  // 2 front-top-right
-        {-0.5,  0.5,  0.5},  // 3 front-top-left
-        {-0.5, -0.5, -0.5},  // 4 back-bottom-left
-        { 0.5, -0.5, -0.5},  // 5 back-bottom-right
-        { 0.5,  0.5, -0.5},  // 6 back-top-right
-        {-0.5,  0.5, -0.5}   // 7 back-top-left
-    };
-    
-    // 12 triangles (2 per face), CCW winding when viewed from outside
-    // Front (+Z)
-    testMesh.tris.push_back({verts[0], verts[1], verts[2]});
-    testMesh.tris.push_back({verts[0], verts[2], verts[3]});
-    
-    // Back (-Z)
-    testMesh.tris.push_back({verts[5], verts[4], verts[7]});
-    testMesh.tris.push_back({verts[5], verts[7], verts[6]});
-    
-    // Right (+X)
-    testMesh.tris.push_back({verts[1], verts[5], verts[6]});
-    testMesh.tris.push_back({verts[1], verts[6], verts[2]});
-    
-    // Left (-X)
-    testMesh.tris.push_back({verts[4], verts[0], verts[3]});
-    testMesh.tris.push_back({verts[4], verts[3], verts[7]});
-    
-    // Top (+Y)
-    testMesh.tris.push_back({verts[3], verts[2], verts[6]});
-    testMesh.tris.push_back({verts[3], verts[6], verts[7]});
-    
-    // Bottom (-Y)
-    testMesh.tris.push_back({verts[4], verts[5], verts[1]});
-    testMesh.tris.push_back({verts[4], verts[1], verts[0]});
-    
-    return testMesh;
-}
+GLuint crateTex;
 
 int main(int argc, char *argv[]) {
+
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -139,7 +108,6 @@ int main(int argc, char *argv[]) {
 
   SDL_GLContext gl_context = SDL_GL_CreateContext(window);
   // SDL_GL_MakeCurrent(window, gl_context);
-
   // Initialize GLEW after context creation
   glewExperimental = GL_TRUE;
   if (glewInit() != GLEW_OK) {
@@ -149,12 +117,10 @@ int main(int argc, char *argv[]) {
 
 float mouseX, mouseY;
 SDL_GetGlobalMouseState(&mouseX, &mouseY);
-std::cout << mouseX << mouseY;
 SDL_Point mousepos;
 mousepos.x = mouseX;
 mousepos.y = mouseY;
 // Get display index at mouse position  
-std::cout << mousepos.x << mousepos.y;
 int displayIndex = SDL_GetDisplayForPoint(&mousepos);
 
 if (displayIndex < 0) displayIndex = 1;  // Fallback to primary
@@ -173,19 +139,25 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   glEnable(GL_CULL_FACE); // Enable culling
 
   mainShaderProgram = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("fragment.glsl").c_str());
+  cullingTestShader = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("shaders/cullingTestShader/fragment.glsl").c_str());
+
+  //OBJDEFS
 
   // Reserve for 1000 objects to avoid reallocation
   objects.reserve(1000);
 
   Object3D ship;
-  ship.meshData.LoadFromObjectFile("src/VideoShip.obj");
+  ship.meshData.LoadFromAssimp("src/VideoShip.obj");
   SetObjDefaults(ship);
+  ship.properties["name"] = "The test ship(TM)";
+  ship.position = {15.0f, 15.0f, 15.0f};
+  ship.scale = {1.0f, 1.0f, 1.0f};
   objects.push_back(ship);
   InitializeObjectGPU(ship);
 
   // Shoutout to tobi :3
   Object3D dickMaster;
-  dickMaster.meshData.LoadFromObjectFileNew("src/flower.obj");
+  dickMaster.meshData.LoadFromAssimp("src/flower.obj");
   SetObjDefaults(dickMaster);
   dickMaster.properties["name"] = "Dick Master :3";
   dickMaster.position = {20.0f, 0.0f, 0.0f};
@@ -194,9 +166,10 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   InitializeObjectGPU(dickMaster);
 
   Object3D testCubeCCW;
-  testCubeCCW.meshData = CreateTestCubeCCW();
+  testCubeCCW.meshData.LoadFromAssimp("src/cube.obj");
   SetObjDefaults(testCubeCCW);
   testCubeCCW.position = {0.0f, 5.0f, 0.0f};
+  testCubeCCW.rotationPerTick = {25.0f, 25.0f, 25.0f};
   objects.push_back(testCubeCCW);
   InitializeObjectGPU(testCubeCCW);
 
@@ -233,6 +206,20 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   SetupScreenQuad();
   //SDL_SetWindowFullscreen(window, true);
 
+  crateTex = LoadTextureFromFile("src/container.jpg");
+
+  GLuint crateTex2;
+  glGenTextures(1, &crateTex2);
+  int width, height, nrChannels;
+  unsigned char *data = stbi_load("src/container.jpg", &width, &height, &nrChannels, 0);
+  if(data){
+	  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	  glGenerateMipmap(GL_TEXTURE_2D);
+  }else{
+	  std::cerr << "Failed to load texture!" << std::endl;
+  }
+  stbi_image_free(data);
+
   CalculateScreenTransforms(window);
   CalculateScreenProjection();
 
@@ -244,13 +231,14 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
   io.ConfigFlags |=
-      ImGuiConfigFlags_ViewportsEnable; // Optional: Enable Multi-Viewport
+  ImGuiConfigFlags_ViewportsEnable; // Optional: Enable Multi-Viewport
 
   SDL_SetWindowRelativeMouseMode(window, true);
 
   gruvboxDark();
 
-  std::cout << "\nInit done!\n";
+
+  std::cout << "\n---------------------\nInit done!\n---------------------\n";
 
   if (argc > 1) {
     std::string_view arg = argv[1];
@@ -265,9 +253,8 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
     }
   }
 
-  // glPolygonMode(GL_FRONT, GL_LINE);
-  // glPolygonMode(GL_BACK, GL_FILL);
-
+  //glPolygonMode(GL_FRONT, GL_LINE);
+  //glPolygonMode(GL_BACK, GL_FILL);
 
   is_running = true;
   SDL_Event event;
@@ -318,16 +305,17 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
           }
         }
         if (event.key.scancode == SDL_SCANCODE_F7) {
-          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        if (event.key.scancode == SDL_SCANCODE_F8) {
-          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        }
+		wireFrameMode = !wireFrameMode;
+	}
 
         if (event.key.scancode == SDL_SCANCODE_V) {
           shouldAllowMove = !shouldAllowMove;
         }
+
+	if(event.key.scancode == SDL_SCANCODE_F1){
+		flight = !flight;
+		playerMovement = {0.0f, 0.0f, 0.0f};
+	}
       }
 
       if (shouldAllowMove) {
@@ -385,10 +373,12 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
         vCamera = Vector_Add(vCamera, Vector_Mul(vRight, fMoveSpeed));
 
       // Up / Down
-      if (key_states[SDL_SCANCODE_SPACE])
-        vCamera.y += 8.0f * deltaTime;
-      if (key_states[SDL_SCANCODE_LSHIFT])
-        vCamera.y -= 8.0f * deltaTime;
+      if(flight){
+	      if (key_states[SDL_SCANCODE_SPACE])
+		vCamera.y += 8.0f * deltaTime;
+	      if (key_states[SDL_SCANCODE_LSHIFT])
+		vCamera.y -= 8.0f * deltaTime;
+      }
     }
 
     // 4. Update camera orientation based on mouse look
@@ -397,6 +387,33 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
       vForward = {cosf(fPitch) * sinf(fYaw), sinf(fPitch),
                   cosf(fPitch) * cosf(fYaw)};
     }
+
+    //Temporary level floor
+    if(vCamera.y < 0){
+	    playerMovement.y = 0;
+	    vCamera.y = 0;
+	grounded = true;
+    }else if(vCamera.y == 0){
+	    playerMovement.y = 0;
+	grounded = true;
+    }else{
+	    grounded = false;
+    }
+
+    if(!flight){
+	    if(!grounded){
+		    playerMovement.y = playerMovement.y - 0.5f * newDeltaTime;
+		    }else if(grounded){
+		    if(key_states[SDL_SCANCODE_SPACE]){
+		    	playerMovement.y = 0.5f;
+		    }
+	    }
+    }else if(flight){
+	    if(key_states[SDL_SCANCODE_SPACE]){
+		    vCamera.y = vCamera.y + 5.0f * deltaTime;
+	    }
+    }
+	    vCamera.y = vCamera.y + playerMovement.y;
 
     if (!shouldAllowMove) {
       if (SDL_GetWindowMouseGrab(window)) {
@@ -437,25 +454,30 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
     matView = Matrix_PointAt(vCamera, Vector_Add(vCamera, vLookDir), vUp);
     matView = Matrix_QuickInverse(matView);
 
+    glViewport(0, 0, targetWindowWidth, targetWindowHeight);
+
     // --- RENDERING PHASE ---
+    // -- OBJECT RENDERING --
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // Clear both Color and Depth
-    glViewport(0, 0, targetWindowWidth, targetWindowHeight);
 
-    RenderObjectModernViaID(ship, 0, mainShaderProgram, matView, matProj, GL_CW, GL_BACK);
-    RenderObjectModernViaID(dickMaster, 1, mainShaderProgram, matView, matProj, GL_CW, GL_BACK);
-    RenderObjectModernViaID(testCubeCCW, 2, mainShaderProgram, matView, matProj, GL_CW, GL_BACK);
-	
-    glFrontFace(GL_CW);
-    glCullFace(GL_FRONT);
+    InitDefaultTexture();
+
+    if(wireFrameMode) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    if(cullingEnabled) glEnable(GL_CULL_FACE);
+
+    RenderObjectAssimp(ship, 0, mainShaderProgram, crateTex, matView, matProj, GL_CW, GL_BACK);
+    RenderObjectAssimp(dickMaster, 1, mainShaderProgram, crateTex2, matView, matProj, GL_CCW, GL_BACK);
+    RenderObjectAssimp(testCubeCCW, 2, mainShaderProgram, crateTex, matView, matProj, GL_CW, GL_BACK);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDisable(GL_DEPTH_TEST);
+	
     glClear(GL_COLOR_BUFFER_BIT);
-
-    glViewport(0, 0, targetWindowWidth, targetWindowHeight);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     glUseProgram(screenShaderProgram);
 
@@ -473,14 +495,19 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
       DrawObjectEditor(objects);
     };
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+    if(glGetError()){
+	std::cout << glGetError() << std::endl;
+    }
+
     // 8. Present final frame
-    // SDL_GL_MakeCurrent(window, gl_context);
+    SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SwapWindow(window);
 
     // 9. Update real frame rate

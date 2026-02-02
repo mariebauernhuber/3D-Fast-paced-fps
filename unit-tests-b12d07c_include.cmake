@@ -1,5 +1,0 @@
-if(EXISTS "/home/nils/Docs/mistake/unit-tests-b12d07c_tests.cmake")
-  include("/home/nils/Docs/mistake/unit-tests-b12d07c_tests.cmake")
-else()
-  add_test(unit-tests_NOT_BUILT-b12d07c unit-tests_NOT_BUILT-b12d07c)
-endif()

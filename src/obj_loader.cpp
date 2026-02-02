@@ -1,7 +1,14 @@
 #include "../include/mesh.hpp"
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3_image/SDL_image.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 unsigned long long nTrisPushedBack;
 
@@ -41,12 +48,83 @@ bool mesh::LoadFromObjectFile(const std::string& filename) {
     return true;
 }
 
+bool mesh::LoadFromAssimp(const std::string& filename) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(filename,
+        aiProcess_Triangulate |   // quads/polys → triangles
+        aiProcess_FlipUVs         // Blender OBJ compatibility
+    );
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        return false;
+    }
+
+    tris.clear();
+    nTrisPushedBack = 0;
+
+    // OBJ = typically 1 root mesh (matches your manual loader)
+    if (scene->mNumMeshes > 0) {
+        aiMesh* ai_mesh = scene->mMeshes[0];
+        tris.reserve(ai_mesh->mNumFaces);
+
+        for (unsigned i = 0; i < ai_mesh->mNumFaces; ++i) {
+            const aiFace& face = ai_mesh->mFaces[i];
+            if (face.mNumIndices != 3) continue;  // safety post-triangulate
+
+            triangle tri;
+
+            // p[0] ← face indices[0] (exactly like verts[i0-1] in your OBJ loader)
+            tri.p[0] = {
+                ai_mesh->mVertices[face.mIndices[0]].x,
+                ai_mesh->mVertices[face.mIndices[0]].y,
+                ai_mesh->mVertices[face.mIndices[0]].z
+            };
+
+            // p[1]
+            tri.p[1] = {
+                ai_mesh->mVertices[face.mIndices[1]].x,
+                ai_mesh->mVertices[face.mIndices[1]].y,
+                ai_mesh->mVertices[face.mIndices[1]].z
+            };
+
+            // p[2]
+            tri.p[2] = {
+                ai_mesh->mVertices[face.mIndices[2]].x,
+                ai_mesh->mVertices[face.mIndices[2]].y,
+                ai_mesh->mVertices[face.mIndices[2]].z
+            };
+
+if (ai_mesh->HasTextureCoords(0)) {
+                tri.t[0] = {
+                    ai_mesh->mTextureCoords[0][face.mIndices[0]].x,
+                    ai_mesh->mTextureCoords[0][face.mIndices[0]].y
+                };
+                tri.t[1] = {
+                    ai_mesh->mTextureCoords[0][face.mIndices[1]].x,
+                    ai_mesh->mTextureCoords[0][face.mIndices[1]].y
+                };
+                tri.t[2] = {
+                    ai_mesh->mTextureCoords[0][face.mIndices[2]].x,
+                    ai_mesh->mTextureCoords[0][face.mIndices[2]].y
+                };
+            } else {
+                // Fallback: white (1,1) or zeros
+                tri.t[0] = tri.t[1] = tri.t[2] = {0.5f, 0.5f};
+            }
+
+            tris.push_back(tri);
+            nTrisPushedBack++;
+        }
+    }
+
+    return !tris.empty();
+}
+
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <charconv>
-#include <cctype>
 
 bool mesh::LoadFromObjectFileNew(const std::string& filename) {
     std::ifstream f(filename);

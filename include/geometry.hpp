@@ -2,7 +2,10 @@
 
 struct vec3d{ float x,y,z,w = 1; };
 struct vec2d{ float x,y; };
-struct triangle{ vec3d p[3]; };
+struct triangle{ 
+	vec3d p[3]; 
+	vec3d t[3];
+};
 struct mat4x4{ float m[4][4] = { {0} }; };
 
 vec3d Matrix_MultiplyVector(const mat4x4 &m, const vec3d &i);
