@@ -21,6 +21,7 @@ bool isImGuiGameViewportInMouseLock = false;
 extern float secondsElapsedSinceStartup;
 extern float secondTiming;
 extern vec3d playerMovement;
+extern bool cullingEnabled;
 void DrawObjectEditor(std::vector<Object3D>& objects) {
         static int selectedIndex = -1;
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
@@ -47,10 +48,15 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
         ImGui::EndListBox();
         ImGui::End();
     
-        ImGui::Begin("Object Editor", NULL, ImGuiViewportFlags());
+	// GENERAL SETTINGS WINDOW
+        ImGui::Begin("Settings", NULL, ImGuiViewportFlags());
 
     	if(ImGui::Button("Exit App")){
 		is_running = false;
+	}
+
+	if(ImGui::Button("Toggle Culling")){
+		cullingEnabled = !cullingEnabled;
 	}
 
     	ImGui::DragFloat("deltaTimeForCalc", &newDeltaTime);
@@ -59,7 +65,10 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 	ImGui::DragFloat("Target Framerate", &targetFrameRate);
 	ImGui::DragFloat("SecondsElapsed", (float*)&secondTiming);
 	ImGui::DragFloat("frameRate", (float*)&realFrameRate);
+	ImGui::End();
 
+	// OBJECT EDITOR
+	ImGui::Begin("Object Editor", NULL, ImGuiViewportFlags());
         if(selectedIndex != -1){
 		if (ImGui::CollapsingHeader("Object3D Editor")) {
 		// Object selector listbox

@@ -120,31 +120,6 @@ if (ai_mesh->HasTextureCoords(0)) {
     return !tris.empty();
 }
 
-GLuint LoadTexture(SDL_Surface* surface) {
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    // FIXED: SDL3 - format is direct member, no -> needed
-    GLenum format;
-    if (SDL_BYTESPERPIXEL(surface->format) == 4) {
-        format = GL_RGBA;
-    } else {
-        format = GL_RGB;
-    }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, format, surface->w, surface->h, 0, 
-                 format, GL_UNSIGNED_BYTE, surface->pixels);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    SDL_DestroySurface(surface);
-    return tex;
-}
-
 #include <fstream>
 #include <sstream>
 #include <string>
