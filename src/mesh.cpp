@@ -40,11 +40,9 @@ void InitializeObjectGPU(Object3D &obj) {
     glBindBuffer(GL_ARRAY_BUFFER, obj.meshData.VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
-    // Position attrib 0: 3 floats, stride=5 floats (pos+uv), offset=0
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // NEW: Texcoord attrib 1: 2 floats, stride=5 floats, offset=3 floats (after pos)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
@@ -59,5 +57,32 @@ void SetObjDefaults(Object3D &obj){
 	obj.positionPerTick = {0.0f, 0.0f, 0.0f};
 	obj.relativePositionPerTick = {0.0f, 0.0f, 0.0f};
 	obj.rotation = {0.0f, 0.0f, 0.0f};
+	obj.farthestPoint = obj.position;
+	obj.plen = 0.0f;
+	obj.cullingFrontFace = GL_CCW;
+	obj.cullingMode = GL_BACK;
 	obj.properties["name"] = "Unnamed Object";
+}
+
+bool Object3D::CreateBroadCollisionCircle(){ // MUST BE CALLED AFTER CREATING MESHDATA
+	triangle farthestTri; // This is the triangle which has the farthest point from the center
+	vec3d x;
+	float xlen;
+	farthestTri = meshData.tris.at(0);
+	plen = 0.0f;
+	for(auto& tri : meshData.tris){
+		for(int i = 0; i < 3; i++){
+			x = {0.0f, 0.0f, 0.0f, 0.0f};
+			x.x = tri.p[i].x - position.x;
+			x.y = tri.p[i].y - position.y;
+			x.z = tri.p[i].z - position.z;
+			xlen = Vector_Length(x);
+			if(xlen > plen){
+				plen = xlen;
+				farthestPoint = x;
+				farthestTri = tri;
+			}
+		}
+	}
+	return 0;
 }

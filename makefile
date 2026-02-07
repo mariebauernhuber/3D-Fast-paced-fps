@@ -1,15 +1,14 @@
 # ANSI Color codes for pretty output
-COM_COLOR   := \033[0;34m
-OBJ_COLOR   := \033[0;36m
-OK_COLOR    := \033[0;32m
-ERROR_COLOR := \033[0;31m
-WARN_COLOR  := \033[0;33m
-NO_COLOR    := \033[m
 COM_STRING  := "Compiling"
 OK_STRING   := "[OK]"
 ERROR_STRING:= "[ERROR]"
 WARN_STRING := "[WARNING]"
-
+COM_COLOR := \033[1;34m # Bright blue
+OBJ_COLOR := \033[1;36m # Bright cyan
+OK_COLOR := \033[1;92m # Bright green (OK)
+ERROR_COLOR := \033[1;91m # Bright red (ERROR)
+WARN_COLOR := \033[1;93m # Bright yellow (WARNING)
+NO_COLOR := \033[0m # Reset / no color
 CC := g++
 
 # Use pkg-config to get exact Nix store paths for the LSP

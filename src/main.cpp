@@ -53,6 +53,7 @@ std::string cullingMode = "GL_BACK";
 
 bool paused = false;
 bool is_running = false;
+vec3d clearColor = {1.0f, 0.0f, 0.0f};
 
 unsigned long long nObjRenderCycles = 0;
 
@@ -85,6 +86,18 @@ extern GLuint screenShaderProgram;
 GLuint crateTex;
 
 int main(int argc, char *argv[]) {
+  if (argc > 1) {
+    std::string_view arg = argv[1];
+
+    if (arg == "--test" || arg == "-t") {
+      return main_tests_runner(1,nullptr);
+    }else if(arg == "--test-verbose" || arg == "-tv"){
+	return main_tests_runner_verbose(1, nullptr);
+    }else {
+      std::cout << "\nUnknown argument: " << arg << "\n";
+      return 1;
+    }
+  }
 
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -115,24 +128,23 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-float mouseX, mouseY;
-SDL_GetGlobalMouseState(&mouseX, &mouseY);
-SDL_Point mousepos;
-mousepos.x = mouseX;
-mousepos.y = mouseY;
-// Get display index at mouse position  
-int displayIndex = SDL_GetDisplayForPoint(&mousepos);
+  float mouseX, mouseY;
+  SDL_Point mousepos;
+  SDL_GetGlobalMouseState(&mouseX, &mouseY);
+  mousepos.x = mouseX;
+  mousepos.y = mouseY;
+  // Get display index at mouse position  
+  int displayIndex = SDL_GetDisplayForPoint(&mousepos);
+  if (displayIndex < 0) displayIndex = 1;  // Fallback to primary
 
-if (displayIndex < 0) displayIndex = 1;  // Fallback to primary
+  // Get display bounds
+  SDL_Rect displayBounds;
+  SDL_GetDisplayBounds(displayIndex, &displayBounds);
 
-// Get display bounds
-SDL_Rect displayBounds;
-SDL_GetDisplayBounds(displayIndex, &displayBounds);
-
-// Resize/match window to display, then fullscreen
-SDL_SetWindowSize(window, displayBounds.w, displayBounds.h);
-SDL_SetWindowPosition(window, displayBounds.x, displayBounds.y);
-SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
+  // Resize/match window to display, then fullscreen
+  SDL_SetWindowSize(window, displayBounds.w, displayBounds.h);
+  SDL_SetWindowPosition(window, displayBounds.x, displayBounds.y);
+  SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
 
   // 5. Global OpenGL State Setup
   glEnable(GL_DEPTH_TEST);
@@ -142,6 +154,7 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   cullingTestShader = CreateShaderProgram(LoadShaderSource("vertex.glsl").c_str(), LoadShaderSource("shaders/cullingTestShader/fragment.glsl").c_str());
 
   //OBJDEFS
+  //YOU MUST SET OPTIONS BEFORE LOADING THE MESH!
 
   // Reserve for 1000 objects to avoid reallocation
   objects.reserve(1000);
@@ -152,6 +165,9 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   ship.properties["name"] = "The test ship(TM)";
   ship.position = {15.0f, 15.0f, 15.0f};
   ship.scale = {1.0f, 1.0f, 1.0f};
+  ship.cullingFrontFace = GL_CW;
+  ship.cullingMode = GL_BACK;
+  ship.CreateBroadCollisionCircle();
   objects.push_back(ship);
   InitializeObjectGPU(ship);
 
@@ -161,15 +177,22 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
   SetObjDefaults(dickMaster);
   dickMaster.properties["name"] = "Dick Master :3";
   dickMaster.position = {20.0f, 0.0f, 0.0f};
-  dickMaster.scale = {0.1f, 0.1f, 0.1f};
+  dickMaster.cullingFrontFace = GL_CCW;
+  dickMaster.cullingMode = GL_BACK;
+  dickMaster.rotationPerTick = {5000.0f, 0.0f, 0.0f};
+  dickMaster.CreateBroadCollisionCircle();
   objects.push_back(dickMaster);
   InitializeObjectGPU(dickMaster);
 
   Object3D testCubeCCW;
   testCubeCCW.meshData.LoadFromAssimp("src/cube.obj");
   SetObjDefaults(testCubeCCW);
+  testCubeCCW.properties["name"] = "meow";
   testCubeCCW.position = {0.0f, 5.0f, 0.0f};
   testCubeCCW.rotationPerTick = {25.0f, 25.0f, 25.0f};
+  testCubeCCW.cullingFrontFace = GL_CW;
+  testCubeCCW.cullingMode = GL_BACK;
+  testCubeCCW.CreateBroadCollisionCircle();
   objects.push_back(testCubeCCW);
   InitializeObjectGPU(testCubeCCW);
 
@@ -208,18 +231,6 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
 
   crateTex = LoadTextureFromFile("src/container.jpg");
 
-  GLuint crateTex2;
-  glGenTextures(1, &crateTex2);
-  int width, height, nrChannels;
-  unsigned char *data = stbi_load("src/container.jpg", &width, &height, &nrChannels, 0);
-  if(data){
-	  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	  glGenerateMipmap(GL_TEXTURE_2D);
-  }else{
-	  std::cerr << "Failed to load texture!" << std::endl;
-  }
-  stbi_image_free(data);
-
   CalculateScreenTransforms(window);
   CalculateScreenProjection();
 
@@ -240,18 +251,6 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
 
   std::cout << "\n---------------------\nInit done!\n---------------------\n";
 
-  if (argc > 1) {
-    std::string_view arg = argv[1];
-
-    if (arg == "--test" || arg == "-t") {
-      return main_tests_runner(1,nullptr);
-    }else if(arg == "--test-verbose" || arg == "-tv"){
-	return main_tests_runner_verbose(1, nullptr);
-    }else {
-      std::cout << "\nUnknown argument: " << arg << "\n";
-      return 1;
-    }
-  }
 
   //glPolygonMode(GL_FRONT, GL_LINE);
   //glPolygonMode(GL_BACK, GL_FILL);
@@ -289,32 +288,18 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
           debugModeTogggled = !debugModeTogggled;
           shouldAllowMove = !shouldAllowMove;
         };
-        if (event.key.scancode == SDL_SCANCODE_F6) {
-          if (cullingMode == "GL_BACK") {
-            cullingMode = "GL_FRONT";
-            std::cout << cullingMode;
-            glCullFace(GL_FRONT);
-          } else if (cullingMode == "GL_FRONT") {
-            cullingMode = "GL_FRONT_AND_BACK";
-            std::cout << cullingMode;
-            glCullFace(GL_FRONT_AND_BACK);
-          } else if (cullingMode == "GL_FRONT_AND_BACK") {
-            cullingMode = "GL_BACK";
-            std::cout << cullingMode;
-            glCullFace(GL_BACK);
-          }
-        }
+
         if (event.key.scancode == SDL_SCANCODE_F7) {
 		wireFrameMode = !wireFrameMode;
 	}
 
-        if (event.key.scancode == SDL_SCANCODE_V) {
-          shouldAllowMove = !shouldAllowMove;
-        }
+        if (event.key.scancode == SDL_SCANCODE_F8) {
+		cullingEnabled = !cullingEnabled;
+	}
 
 	if(event.key.scancode == SDL_SCANCODE_F1){
-		flight = !flight;
 		playerMovement = {0.0f, 0.0f, 0.0f};
+		flight = !flight;
 	}
       }
 
@@ -447,6 +432,13 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
           objects[i].position.y + objects[i].positionPerTick.y * newDeltaTime;
       objects[i].position.z =
           objects[i].position.z + objects[i].positionPerTick.z * newDeltaTime;
+
+      objects[i].farthestPoint.x =
+          objects[i].farthestPoint.x + objects[i].positionPerTick.x * newDeltaTime;
+      objects[i].farthestPoint.y =
+          objects[i].farthestPoint.y + objects[i].positionPerTick.y * newDeltaTime;
+      objects[i].farthestPoint.z =
+          objects[i].farthestPoint.z + objects[i].positionPerTick.z * newDeltaTime;
     };
 
     // 5. Update view matrix
@@ -459,9 +451,8 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
     // --- RENDERING PHASE ---
     // -- OBJECT RENDERING --
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT |
-            GL_DEPTH_BUFFER_BIT); // Clear both Color and Depth
+    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear both Color and Depth
 
     InitDefaultTexture();
 
@@ -469,9 +460,9 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
 
     if(cullingEnabled) glEnable(GL_CULL_FACE);
 
-    RenderObjectAssimp(ship, 0, mainShaderProgram, crateTex, matView, matProj, GL_CW, GL_BACK);
-    RenderObjectAssimp(dickMaster, 1, mainShaderProgram, crateTex2, matView, matProj, GL_CCW, GL_BACK);
-    RenderObjectAssimp(testCubeCCW, 2, mainShaderProgram, crateTex, matView, matProj, GL_CW, GL_BACK);
+    RenderObjectAssimp(ship, 0, mainShaderProgram, crateTex, matView, matProj, ship.cullingFrontFace, ship.cullingMode);
+    RenderObjectAssimp(dickMaster, 1, mainShaderProgram, crateTex, matView, matProj, dickMaster.cullingFrontFace, dickMaster.cullingMode);
+    RenderObjectAssimp(testCubeCCW, 2, mainShaderProgram, crateTex, matView, matProj, testCubeCCW.cullingFrontFace, testCubeCCW.cullingMode);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
@@ -502,9 +493,9 @@ SDL_SetWindowFullscreen(window, true);  // Or SDL_WINDOW_FULLSCREEN
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    if(glGetError()){
-	std::cout << glGetError() << std::endl;
-    }
+    //if(glGetError() != 0){
+    //    std::cout << "GLERROR: " << glGetError() << std::endl;
+    //}
 
     // 8. Present final frame
     SDL_GL_MakeCurrent(window, gl_context);

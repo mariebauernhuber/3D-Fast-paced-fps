@@ -1,5 +1,4 @@
 #include "../include/renderer.hpp"
-#include "../include/frustumCulling.hpp"
 #include <GL/glew.h>
 #include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_timer.h>
@@ -8,12 +7,11 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/trigonometric.hpp>
-#include <iostream>
 #include <vector>
 #include <cmath>
-#include <algorithm>
 #include "../include/mesh.hpp"
 #include <SDL3/SDL.h>
+#include "stb_image.h"
 
 bool debugModeTogggled = false;
 extern unsigned long long nObjRenderCycles;
@@ -83,7 +81,6 @@ void CalculateDeltaTime(){
 
     deltaTime = 0.0f;
 
-    if (lastCounter != 0)
     {
         deltaTime = (float)(currentCounter - lastCounter) / (float)frequency;
     }
@@ -141,10 +138,16 @@ void InitDefaultTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
+//The main render function.
+//This will draw the objects mesh and texturemesh from its VAO buffer to the main GL_TEXTURE0, which can then later be either drawn to a screen quad or some other textured object.
 void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode){
+    if(obj.properties.empty()){
+	    return;
+    }
+
     glUseProgram(shader);
-    glFrontFace(frontFace);
-    glCullFace(cullMode);
+    glFrontFace(objects[ID].cullingFrontFace);
+    glCullFace(objects[ID].cullingFrontFace);
     // Use provided texture OR fallback
     GLuint texID = texture ? texture : whiteTexture;
     
@@ -173,6 +176,7 @@ void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, co
     }
 
     model = glm::translate(model, pos);
+    model = glm::scale(model, {objects[ID].scale.x, objects[ID].scale.y, objects[ID].scale.z});
     model = glm::rotate(model, glm::radians(objects[ID].rotation.x), {1.0f * newDeltaTime, 0.0f, 0.0f});
     model = glm::rotate(model, glm::radians(objects[ID].rotation.y), {0.0f, 1.0f * newDeltaTime, 0.0f});
     model = glm::rotate(model, glm::radians(objects[ID].rotation.z), {0.0f, 0.0f, 1.0f * newDeltaTime});
@@ -203,10 +207,6 @@ void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, co
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-#include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
-#include <GL/glew.h>
-#include "stb_image.h"
 
 GLuint LoadTextureFromFile(const char* filename) {
     int width, height, channels;

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
 extern float deltaTime;
 extern float deltaTimeMod;
@@ -15,6 +16,7 @@ extern bool is_running;
 extern GLuint fbo, textureColorBuffer;
 extern vec3d vCamera;
 extern mat4x4 matView, matProj;
+extern vec3d clearColor;
 glm::mat4 gridMatrix = glm::mat4(1.0f); 
 bool isImGuiGameViewportInFocus = false;
 bool isImGuiGameViewportInMouseLock = false;
@@ -22,8 +24,10 @@ extern float secondsElapsedSinceStartup;
 extern float secondTiming;
 extern vec3d playerMovement;
 extern bool cullingEnabled;
+
+long unsigned int selectedIndex = 0;
+
 void DrawObjectEditor(std::vector<Object3D>& objects) {
-        static int selectedIndex = -1;
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
         ImGui::Begin("Game Viewport (press F1 to toggle focus)");
     	ImGui::Image(textureColorBuffer, ImVec2(ImGui::GetContentRegionAvail().x, (ImGui::GetContentRegionAvail().x /16)*9), ImVec2(0, 0), ImVec2(1, -1));
@@ -35,14 +39,14 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
         ImGui::Begin("Scene tree");
         // Object selector listbox
         ImGui::BeginListBox(" ", ImVec2(500, 1000));
-        for (int i = 0; i < objects.size(); ++i) {
+        for (long unsigned int i = 0; i < objects.size(); ++i) {
             std::string displayName = "Unnamed Object " + std::to_string(i);
             auto nameIt = objects[i].properties.find("name");
             if (nameIt != objects[i].properties.end()) {
                 displayName = nameIt->second;
             }
             if (ImGui::Selectable(displayName.c_str(), selectedIndex == i)) {
-                selectedIndex = i;
+                selectedIndex = 0;
             }
         }
         ImGui::EndListBox();
@@ -59,6 +63,8 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 		cullingEnabled = !cullingEnabled;
 	}
 
+	ImGui::DragFloat3("Clearcolor", &clearColor.x);
+
     	ImGui::DragFloat("deltaTimeForCalc", &newDeltaTime);
     	ImGui::DragFloat("Actual deltaTime", &deltaTime);
 	ImGui::DragFloat("DeltaTime Modifier", &deltaTimeMod);
@@ -69,22 +75,23 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
 
 	// OBJECT EDITOR
 	ImGui::Begin("Object Editor", NULL, ImGuiViewportFlags());
-        if(selectedIndex != -1){
+		int x = selectedIndex;
+		ImGui::DragInt("SelectedIndex", &x, 1);
+		selectedIndex = x;
 		if (ImGui::CollapsingHeader("Object3D Editor")) {
 		// Object selector listbox
 		//
 		if (ImGui::Button("Add Object")) {
 		    objects.emplace_back();
-		    selectedIndex = -1;
+		    selectedIndex = 0;
 		}
 		if (ImGui::Button("Delete Selected") && objects.size() > 0) {
 		    objects.erase(objects.begin() + selectedIndex);
-			selectedIndex = -1;
+			selectedIndex = 0;
 		    }
-        }
 
         // Edit selected object
-        if (selectedIndex >= 0 && selectedIndex < objects.size()) {
+        if (objects.size() >= 1) {
             // Transform editing section
             if (ImGui::CollapsingHeader("Transform")) {
                 ImGui::DragFloat3("Position", &objects[selectedIndex].position.x, 0.1f);
@@ -92,6 +99,12 @@ void DrawObjectEditor(std::vector<Object3D>& objects) {
                 ImGui::DragFloat3("Rotation / Tick", &objects[selectedIndex].rotationPerTick.x, 0.1f);
                 ImGui::DragFloat3("Position / Tick", &objects[selectedIndex].positionPerTick.x, 0.1f);
                 ImGui::DragFloat3("Scale", &objects[selectedIndex].scale.x, 0.1f);
+		ImGui::DragFloat3("FarthestPos", &objects[selectedIndex].farthestPoint.x, 1.0f);
+		if(ImGui::Button("GL_BACK")){objects[selectedIndex].cullingMode = GL_BACK; std::cout << objects[selectedIndex].cullingMode << std::endl;}
+		if(ImGui::Button("GL_FRONT")){objects[selectedIndex].cullingMode = GL_FRONT;std::cout << objects[selectedIndex].cullingMode << std::endl;}
+		if(ImGui::Button("Both")){objects[selectedIndex].cullingMode = GL_FRONT_AND_BACK;std::cout << objects[selectedIndex].cullingMode << std::endl;}
+		if(ImGui::Button("GL_CCW")){objects[selectedIndex].cullingFrontFace = GL_CCW;std::cout << objects[selectedIndex].cullingFrontFace << std::endl;}
+		if(ImGui::Button("GL_CW")){objects[selectedIndex].cullingFrontFace = GL_CW;std::cout << objects[selectedIndex].cullingFrontFace << std::endl;}
             }
         } else {
             ImGui::Text("No objects available");

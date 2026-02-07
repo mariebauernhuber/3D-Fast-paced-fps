@@ -458,9 +458,26 @@ TEST_CASE("Full Object demo"){
 	}
 
 	SECTION("Loading a mesh and adding it to GPU stack"){
+		SetObjDefaults(obj);
+		obj.position = {5.0f, 5.0f, 5.0f};
+		obj.properties["name"] = "test object";
 		obj.meshData.LoadFromAssimp("src/VideoShip.obj");
 		InitializeObjectGPU(obj);
 
+		REQUIRE(!obj.properties.empty());
+
+		REQUIRE(obj.GetWorldMatrix().m);
+
+		REQUIRE(sizeof(obj.meshData.VAO) != 0);
+		REQUIRE(sizeof(obj.meshData.VBO) != 0);
+
 		REQUIRE(obj.meshData.tris.data() != nullptr);
+	}
+
+	SECTION("Deleting an object and clearing its adress from the stack"){
+		obj.properties.clear();
+		obj.meshData.tris.clear();
+		REQUIRE(obj.meshData.tris.data() == nullptr);
+		REQUIRE(obj.properties.empty());
 	}
 }
