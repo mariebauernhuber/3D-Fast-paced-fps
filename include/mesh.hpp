@@ -22,7 +22,12 @@ struct Object3D{
 	vec3d positionPerTick;
 	vec3d relativePositionPerTick;
 	vec3d scale;
+	vec3d farthestPoint; // Farthest point of the mesh from the center
+	float plen; //the distance from the center to the fartest point of the mesh, used for basic collision checking
+	GLuint cullingMode;
+	GLuint cullingFrontFace;
 	mat4x4 GetWorldMatrix();
+	bool CreateBroadCollisionCircle();
 	std::map<std::string, std::string> properties;
 	long unsigned int selectedIndex;
 };

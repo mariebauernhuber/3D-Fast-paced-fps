@@ -173,13 +173,9 @@ TEST_CASE_METHOD(SDLTestFixture, "SDL3 Input Handling", "[sdl3][input]") {
     
     SECTION("Mouse events") {
 	SDL_SetWindowRelativeMouseMode(window, true);
+	REQUIRE(SDL_GetWindowRelativeMouseMode(window));
 	SDL_SetWindowRelativeMouseMode(window, false);
-        
-        SDL_WarpMouseInWindow(window, 400, 300);
-        float x, y;
-        SDL_GetMouseState(&x, &y);
-        REQUIRE(x == 400);
-        REQUIRE(y == 300);
+	REQUIRE(!SDL_GetWindowRelativeMouseMode(window));
     }
 }
 

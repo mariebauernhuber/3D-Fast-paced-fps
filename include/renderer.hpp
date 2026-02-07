@@ -18,7 +18,6 @@ void execOncePerSec();
 void MinuteTimer();
 vec2d ProjectToScreen(const vec3d &v);
 void InitDefaultTexture();
-void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj);
 GLuint LoadTextureFromFile(const char* filename);
 void RenderObjectAssimp(Object3D& obj, int ID, GLuint shader, GLuint texture, const mat4x4 &matView, const mat4x4 &matProj, GLuint frontFace, GLuint cullMode);
 void DebugTransform(Object3D& obj);
