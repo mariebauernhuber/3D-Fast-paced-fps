@@ -53,7 +53,7 @@ std::string cullingMode = "GL_BACK";
 
 bool paused = false;
 bool is_running = false;
-vec3d clearColor = {0.25f, 0.25f, 0.25f};
+vec3d clearColor = {1.0f, 0.0f, 0.0f};
 
 unsigned long long nObjRenderCycles = 0;
 
