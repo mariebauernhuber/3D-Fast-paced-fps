@@ -53,7 +53,7 @@ std::string cullingMode = "GL_BACK";
 
 bool paused = false;
 bool is_running = false;
-vec3d clearColor = {1.0f, 0.0f, 0.0f};
+vec3d clearColor = {0.0f, 0.0f, 0.0f};
 
 unsigned long long nObjRenderCycles = 0;
 
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
   dickMaster.position = {20.0f, 0.0f, 0.0f};
   dickMaster.cullingFrontFace = GL_CCW;
   dickMaster.cullingMode = GL_BACK;
-  dickMaster.rotationPerTick = {5000.0f, 0.0f, 0.0f};
+  dickMaster.rotationPerTick = {25.0f, 0.0f, 0.0f};
   dickMaster.CreateBroadCollisionCircle();
   objects.push_back(dickMaster);
   InitializeObjectGPU(dickMaster);

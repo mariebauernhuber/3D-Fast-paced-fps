@@ -16,6 +16,7 @@ pkgs.mkShell {
 		catch2
 		cmake
 		assimp
+		ninja
 	];
 	shellHook = ''
   if [ -z "$LD_LIBRARY_PATH" ]; then
